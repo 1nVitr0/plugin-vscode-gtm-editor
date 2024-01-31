@@ -1,0 +1,125 @@
+{
+  "name": "gtm-editor",
+  "displayName": "Google Tag Manager editor Support",
+  "description": "View and edit Googler Tag Manager Workspace Exports",
+  "icon": "resources/icon.png",
+  "license": "MIT",
+  "author": "1nVitr0",
+  "publisher": "1nVitr0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1nVitr0/plugin-vscode-gtm-editor.git"
+  },
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.73.0"
+  },
+  "categories": [
+    "Formatters",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "l10n": "./l10n",
+  "contributes": {
+    "commands": [],
+    "configuration": []
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "test-compile": "tsc -p ./",
+    "test-watch": "tsc -watch -p ./",
+    "pretest": "npm run test-compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@types/deepmerge": "^2.2.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.6.4",
+    "@types/vscode": "1.73",
+    "@types/xml2js": "^0.4.12",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "csv-parse": "^5.5.2",
+    "deepmerge": "^4.3.1",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "glob": "^10.3.3",
+    "mocha": "^10.2.0",
+    "semantic-release": "^21.0.7",
+    "semantic-release-vsce": "^5.6.1",
+    "ts-loader": "^9.4.4",
+    "type-fest": "^4.3.1",
+    "typescript": "^5.1.6",
+    "typescript-json-schema": "^0.60.0",
+    "vscode-test": "^1.6.1",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "xml2js": "^0.6.2"
+  },
+  "release": {
+    "branches": [
+      "main",
+      "develop"
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "angular",
+          "releaseRules": [
+            {
+              "type": "docs",
+              "release": "patch"
+            },
+            {
+              "type": "l10n",
+              "release": "patch"
+            }
+          ]
+        }
+      ],
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      [
+        "@semantic-release/git",
+        {
+          "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}",
+          "assets": [
+            "package.json",
+            "CHANGELOG.md",
+            "README.md"
+          ]
+        }
+      ],
+      [
+        "semantic-release-vsce",
+        {
+          "packageVsix": true
+        }
+      ],
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            "*.vsix"
+          ]
+        }
+      ]
+    ]
+  },
+  "dependencies": {
+    "flat": "^6.0.1",
+    "parse-json": "^8.0.1",
+    "strip-json-comments": "^5.0.1"
+  }
+}
