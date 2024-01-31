@@ -24,7 +24,19 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {
-    "commands": [],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "gtm-editor.openGtmExport"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "gtm-editor.openGtmExport",
+        "title": "Open GTM Export"
+      }
+    ],
     "configuration": []
   },
   "scripts": {

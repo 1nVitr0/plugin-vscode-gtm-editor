@@ -8,6 +8,10 @@ export class GtmExportContentProvider {
   public readonly tagManagerUrl: string;
   public readonly exportTime: Date;
 
+  public get updateTime(): Date {
+    return new Date(this._data.exportTime);
+  }
+
   private _data: any;
   private _container: any;
   private _tags: any[];
@@ -16,6 +20,10 @@ export class GtmExportContentProvider {
   private _folders: any[];
   private _builtInVariables: any[];
   private _customTemplates: any[];
+
+  private set updateTime(value: Date) {
+    this._data.exportTime = value.toISOString();
+  }
 
   constructor(private gtmExportUri: Uri) {
     const content = workspace.fs.readFile(gtmExportUri);
@@ -66,7 +74,7 @@ export class GtmExportContentProvider {
     else return this._folders.map((folder) => folder.name);
   }
 
-  public getTag(folder: string | null, name: string): any | undefined;
+  public getTag(folder: string | undefined | null, name: string): any | undefined;
   public getTag(folder?: string | null): any[];
   public getTag(folder?: string | null, name?: string) {
     if (name) return this._tags.find((tag) => tag.name === name);
@@ -74,7 +82,7 @@ export class GtmExportContentProvider {
     else return this._tags;
   }
 
-  public getTrigger(folder: string | null, name: string): any | undefined;
+  public getTrigger(folder: string | undefined | null, name: string): any | undefined;
   public getTrigger(folder?: string | null): any[];
   public getTrigger(folder?: string | null, name?: string) {
     if (name) return this._triggers.find((trigger) => trigger.name === name);
@@ -82,7 +90,7 @@ export class GtmExportContentProvider {
     else return this._triggers;
   }
 
-  public getVariable(folder: string | null, name: string): any | undefined;
+  public getVariable(folder: string | undefined | null, name: string): any | undefined;
   public getVariable(folder?: string | null): any[];
   public getVariable(folder?: string | null, name?: string) {
     if (name) return this._variables.find((variable) => variable.name === name);
@@ -106,40 +114,100 @@ export class GtmExportContentProvider {
 
   public setTag(name: string, data: any) {
     const tag = this.getTag(null, name);
-    if (tag) Object.assign(tag, data);
-    else this._tags.push(data);
+    if (tag) {
+      Object.assign(tag, data);
+    } else {
+      const occupiedIds = this._tags.map((tag) => tag.tagId);
+      data.id = occupiedIds.includes(data.tagId) ? Math.max(...occupiedIds) + 1 : data.tagId;
+      this._tags.push(data);
+    }
 
     return this.save();
   }
 
   public setTrigger(name: string, data: any) {
     const trigger = this.getTrigger(null, name);
-    if (trigger) Object.assign(trigger, data);
-    else this._triggers.push(data);
+    if (trigger) {
+      Object.assign(trigger, data);
+    } else {
+      const occupiedIds = this._triggers.map((trigger) => trigger.triggerId);
+      data.id = occupiedIds.includes(data.triggerId) ? Math.max(...occupiedIds) + 1 : data.triggerId;
+      this._triggers.push(data);
+    }
 
     return this.save();
   }
 
   public setVariable(name: string, data: any) {
     const variable = this.getVariable(null, name);
-    if (variable) Object.assign(variable, data);
-    else this._variables.push(data);
+    if (variable) {
+      Object.assign(variable, data);
+    } else {
+      const occupiedIds = this._variables.map((variable) => variable.variableId);
+      data.id = occupiedIds.includes(data.variableId) ? Math.max(...occupiedIds) + 1 : data.variableId;
+      this._variables.push(data);
+    }
 
     return this.save();
   }
 
   public setBuiltInVariable(name: string, data: any) {
     const variable = this.getBuiltInVariable(name);
-    if (variable) Object.assign(variable, data);
-    else this._builtInVariables.push(data);
+    if (variable) {
+      Object.assign(variable, data);
+    } else {
+      const occupiedIds = this._builtInVariables.map((variable) => variable.variableId);
+      data.id = occupiedIds.includes(data.variableId) ? Math.max(...occupiedIds) + 1 : data.variableId;
+      this._builtInVariables.push(data);
+    }
 
     return this.save();
   }
 
   public setCustomTemplate(name: string, data: any) {
     const template = this.getCustomTemplate(name);
-    if (template) Object.assign(template, data);
-    else this._customTemplates.push(data);
+    if (template) {
+      Object.assign(template, data);
+    } else {
+      const occupiedIds = this._customTemplates.map((template) => template.variableId);
+      data.id = occupiedIds.includes(data.variableId) ? Math.max(...occupiedIds) + 1 : data.variableId;
+      this._customTemplates.push(data);
+    }
+
+    return this.save();
+  }
+
+  public deleteTag(name: string) {
+    const index = this._tags.findIndex((tag) => tag.name === name);
+    if (index !== -1) this._tags.splice(index, 1);
+
+    return this.save();
+  }
+
+  public deleteTrigger(name: string) {
+    const index = this._triggers.findIndex((trigger) => trigger.name === name);
+    if (index !== -1) this._triggers.splice(index, 1);
+
+    return this.save();
+  }
+
+  public deleteVariable(name: string) {
+    const index = this._variables.findIndex((variable) => variable.name === name);
+    if (index !== -1) this._variables.splice(index, 1);
+
+    return this.save();
+  }
+
+  public deleteBuiltInVariable(name: string) {
+    const index = this._builtInVariables.findIndex((variable) => variable.name === name);
+    if (index !== -1) this._builtInVariables.splice(index, 1);
+
+    return this.save();
+  }
+
+  public deleteCustomTemplate(name: string) {
+    const index = this._customTemplates.findIndex((template) => template.name === name);
+    if (index !== -1) this._customTemplates.splice(index, 1);
 
     return this.save();
   }
@@ -150,6 +218,8 @@ export class GtmExportContentProvider {
   }
 
   private save() {
+    this.updateTime = new Date();
+
     const data = JSON.stringify(this._data, null, 2);
     return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
   }

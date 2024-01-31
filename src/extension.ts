@@ -1,8 +1,12 @@
-import { ExtensionContext, commands, workspace } from "vscode";
+import { ExtensionContext, workspace } from "vscode";
 import contributeCommands from "./contribute/commands";
+import { GtmFileSystemProvider } from "./providers/GtmFileSystemProvider";
 
 export function activate(context: ExtensionContext) {
-  context.subscriptions.push(...contributeCommands());
+  const gtmFs = new GtmFileSystemProvider();
+
+  context.subscriptions.push(workspace.registerFileSystemProvider("gtm", gtmFs, { isReadonly: false }));
+  context.subscriptions.push(...contributeCommands(gtmFs));
   context.subscriptions.push(
     workspace.onDidChangeConfiguration((change) => {
       if (change.affectsConfiguration("gtm-editor")) {
