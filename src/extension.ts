@@ -1,11 +1,12 @@
 import { ExtensionContext, workspace } from "vscode";
 import contributeCommands from "./contribute/commands";
 import { GtmFileSystemProvider } from "./providers/GtmFileSystemProvider";
+import contributeFileSystemProviders from "./contribute/file-system";
 
 export function activate(context: ExtensionContext) {
   const gtmFs = new GtmFileSystemProvider();
 
-  context.subscriptions.push(workspace.registerFileSystemProvider("gtm", gtmFs, { isReadonly: false }));
+  context.subscriptions.push(...contributeFileSystemProviders(gtmFs));
   context.subscriptions.push(...contributeCommands(gtmFs));
   context.subscriptions.push(
     workspace.onDidChangeConfiguration((change) => {

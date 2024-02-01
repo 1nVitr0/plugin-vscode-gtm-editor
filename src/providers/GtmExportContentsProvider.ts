@@ -25,9 +25,8 @@ export class GtmExportContentProvider {
     this._data.exportTime = value.toISOString();
   }
 
-  constructor(private gtmExportUri: Uri) {
-    const content = workspace.fs.readFile(gtmExportUri);
-    this._data = JSON.parse(content.toString());
+  constructor(private gtmExportUri: Uri, initialContent: string) {
+    this._data = JSON.parse(initialContent.toString());
 
     const {
       exportTime,
