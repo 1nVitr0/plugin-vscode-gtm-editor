@@ -4,10 +4,8 @@ import { GtmFileSystemProvider } from "./providers/GtmFileSystemProvider";
 import contributeFileSystemProviders from "./contribute/file-system";
 
 export function activate(context: ExtensionContext) {
-  const gtmFs = new GtmFileSystemProvider();
-
-  context.subscriptions.push(...contributeFileSystemProviders(gtmFs));
-  context.subscriptions.push(...contributeCommands(gtmFs));
+  context.subscriptions.push(...contributeFileSystemProviders());
+  context.subscriptions.push(...contributeCommands());
   context.subscriptions.push(
     workspace.onDidChangeConfiguration((change) => {
       if (change.affectsConfiguration("gtm-editor")) {

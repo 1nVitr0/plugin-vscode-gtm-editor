@@ -1,10 +1,6 @@
 import { Uri, commands } from "vscode";
 import { GtmFileSystemProvider } from "../providers/GtmFileSystemProvider";
 
-export default function contributeCommands(gtmFs: GtmFileSystemProvider) {
-  return [
-    commands.registerCommand("gtm-editor.openGtmExport", (uri: Uri) => {
-      gtmFs.load(uri);
-    }),
-  ];
+export default function contributeCommands() {
+  return [commands.registerCommand("gtm-editor.openGtmExport", GtmFileSystemProvider.openSource)];
 }

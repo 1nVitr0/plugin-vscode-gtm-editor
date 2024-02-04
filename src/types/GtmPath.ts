@@ -1,4 +1,7 @@
+import { Uri } from "vscode";
+
 export interface GtmPath {
+  sourceUri: Uri;
   accountId?: string;
   containerId?: string;
   folder?: string;

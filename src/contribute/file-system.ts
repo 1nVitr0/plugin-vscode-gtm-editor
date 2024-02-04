@@ -1,6 +1,6 @@
 import { workspace } from "vscode";
 import { GtmFileSystemProvider } from "../providers/GtmFileSystemProvider";
 
-export default function contributeFileSystemProviders(gtmFs: GtmFileSystemProvider) {
-  return [workspace.registerFileSystemProvider("gtm", gtmFs, { isReadonly: false })];
+export default function contributeFileSystemProviders() {
+  return [workspace.registerFileSystemProvider("gtm", new GtmFileSystemProvider(), { isReadonly: false })];
 }
