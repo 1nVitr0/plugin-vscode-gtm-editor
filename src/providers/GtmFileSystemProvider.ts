@@ -232,7 +232,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   ): Promise<void> {
     const content = await this.load(uri);
     const stat = create ? null : await this.stat(uri); // Will throw Error if file doesn't exist
-    const { accountId, containerId, folder, itemType, id } = await this.resolvePath(uri);
+    const { sourceUri, accounts, accountId, containers, containerId, itemType, id } = await this.resolvePath(uri);
 
     if (stat?.type === FileType.Directory) throw FileSystemError.FileIsADirectory();
     if (stat && !overwrite) throw FileSystemError.FileExists(uri);
@@ -242,8 +242,25 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
     switch (itemType) {
       case "folders":
-        // TODO: Update folder directories
-        return content.setFolder(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
+        const originalFolder = content.getFolder(id);
+        const updatedFolder = JSON.parse(data.toString());
+
+        if (originalFolder && originalFolder.name !== updatedFolder.name) {
+          const baseFolderEvent = { sourceUri, accountId, accounts, containerId, containers };
+          this._fireSoon(
+            event,
+            {
+              type: FileChangeType.Deleted,
+              uri: GtmFileSystemProvider.buildPath({ ...baseFolderEvent, folder: originalFolder.name }),
+            },
+            {
+              type: FileChangeType.Created,
+              uri: GtmFileSystemProvider.buildPath({ ...baseFolderEvent, folder: updatedFolder.name }),
+            }
+          );
+        }
+
+        return content.setFolder(id, updatedFolder).then(() => this._fireSoon(event));
       case "tags":
         return content.setTag(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       case "triggers":
@@ -291,19 +308,8 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
   async rename(oldUri: Uri, newUri: Uri, { overwrite }: { readonly overwrite: boolean }): Promise<void> {
     const content = await this.load(oldUri);
-    const {
-      accountId: oldAccountId,
-      containerId: oldContainerId,
-      itemType: oldItemType,
-      id: oldId,
-    } = await this.resolvePath(oldUri);
-    const {
-      accountId: newAccountId,
-      containerId: newContainerId,
-      folder: newFolder,
-      itemType: newItemType,
-      id: newId,
-    } = await this.resolvePath(newUri);
+    const { itemType: oldItemType, id: oldId } = await this.resolvePath(oldUri);
+    const { folder: newFolder, itemType: newItemType, id: newId } = await this.resolvePath(newUri);
     const events = [
       { type: FileChangeType.Deleted, uri: oldUri },
       { type: FileChangeType.Created, uri: newUri },
@@ -314,18 +320,13 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (!overwrite && (await this.exists(newUri))) throw FileSystemError.FileExists(newUri);
 
     const item = JSON.parse(this.readFile(oldUri).toString()); // Will throw Error if file doesn't exist
-    item.accountId = newAccountId;
-    item.containerId = newContainerId;
     if (newFolder) item.parentFolderId = newFolder;
     else delete item.parentFolderId;
     item.name = newId;
 
     switch (oldItemType) {
       case "folders":
-        await content.setFolder(newId, item);
-        // TODO: delete folders
-        // await content.deleteFolder(oldId);
-        return this._fireSoon(...events);
+        return this.writeFile(oldUri, Buffer.from(JSON.stringify(item)), { create: false, overwrite: true });
       case "tags":
         await content.setTag(newId, item);
         await content.deleteTag(oldId);
