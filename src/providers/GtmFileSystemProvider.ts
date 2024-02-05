@@ -243,17 +243,17 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     switch (itemType) {
       case "folders":
         // TODO: Update folder directories
-        return content.setFolder(id, data).then(() => this._fireSoon(event));
+        return content.setFolder(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       case "tags":
-        return content.setTag(id, data).then(() => this._fireSoon(event));
+        return content.setTag(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       case "triggers":
-        return content.setTrigger(id, data).then(() => this._fireSoon(event));
+        return content.setTrigger(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       case "variables":
-        return content.setVariable(id, data).then(() => this._fireSoon(event));
+        return content.setVariable(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       case "builtInVariables":
-        return content.setBuiltInVariable(id, data).then(() => this._fireSoon(event));
+        return content.setBuiltInVariable(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       case "customTemplates":
-        return content.setCustomTemplate(id, data).then(() => this._fireSoon(event));
+        return content.setCustomTemplate(id, JSON.parse(data.toString())).then(() => this._fireSoon(event));
       default:
         throw FileSystemError.Unavailable(uri);
     }
