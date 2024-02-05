@@ -20,7 +20,9 @@
     "Other"
   ],
   "keywords": [],
-  "activationEvents": [],
+  "activationEvents": [
+    "onFileSystem:gtm"
+  ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "contributes": {

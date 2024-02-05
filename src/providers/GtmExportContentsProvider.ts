@@ -1,4 +1,5 @@
 import { Uri, workspace } from "vscode";
+import { GtmItem } from "../types/gtm/GtmItem";
 
 export class GtmExportContentProvider {
   public readonly accountId: string;
@@ -66,49 +67,65 @@ export class GtmExportContentProvider {
     return this._container;
   }
 
-  public getFolder(id: string): string | undefined;
-  public getFolder(): string[];
-  public getFolder(id?: string) {
-    if (id) return this._folders.find((folder) => folder.folderId === id)?.name;
-    else return this._folders.map((folder) => folder.name);
+  public getFolder(id: string): GtmItem | undefined;
+  public getFolder(): GtmItem[];
+  public getFolder(id?: string): GtmItem | GtmItem[] | undefined {
+    if (id) return this._folders.find((folder) => folder.name === id);
+    else return this._folders;
   }
 
-  public getTag(folder: string | undefined | null, name: string): any | undefined;
-  public getTag(folder?: string | null): any[];
-  public getTag(folder?: string | null, name?: string) {
+  public getTag(folder: string | undefined | null, name: string): GtmItem | undefined;
+  public getTag(folder?: string | null): GtmItem[];
+  public getTag(folder?: string | null, name?: string): GtmItem[] | GtmItem | undefined {
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
     if (name) return this._tags.find((tag) => tag.name === name);
-    else if (folder) return this._tags.filter((tag) => tag.parentFolderId === folder);
+    else if (folderId) return this._tags.filter((tag) => tag.parentFolderId === folderId);
     else return this._tags;
   }
 
-  public getTrigger(folder: string | undefined | null, name: string): any | undefined;
-  public getTrigger(folder?: string | null): any[];
-  public getTrigger(folder?: string | null, name?: string) {
+  public getTrigger(folder: string | undefined | null, name: string): GtmItem | undefined;
+  public getTrigger(folder?: string | null): GtmItem[];
+  public getTrigger(folder?: string | null, name?: string): GtmItem[] | GtmItem | undefined {
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
     if (name) return this._triggers.find((trigger) => trigger.name === name);
-    else if (folder) return this._triggers.filter((trigger) => trigger.parentFolderId === folder);
+    else if (folderId) return this._triggers.filter((trigger) => trigger.parentFolderId === folderId);
     else return this._triggers;
   }
 
-  public getVariable(folder: string | undefined | null, name: string): any | undefined;
-  public getVariable(folder?: string | null): any[];
-  public getVariable(folder?: string | null, name?: string) {
+  public getVariable(folder: string | undefined | null, name: string): GtmItem | undefined;
+  public getVariable(folder?: string | null): GtmItem[];
+  public getVariable(folder?: string | null, name?: string): GtmItem[] | GtmItem | undefined {
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
     if (name) return this._variables.find((variable) => variable.name === name);
-    else if (folder) return this._variables.filter((variable) => variable.parentFolderId === folder);
+    else if (folderId) return this._variables.filter((variable) => variable.parentFolderId === folderId);
     else return this._variables;
   }
 
-  public getBuiltInVariable(name: string): any | undefined;
-  public getBuiltInVariable(): any[];
-  public getBuiltInVariable(name?: string) {
+  public getBuiltInVariable(name: string): GtmItem | undefined;
+  public getBuiltInVariable(): GtmItem[];
+  public getBuiltInVariable(name?: string): GtmItem[] | GtmItem | undefined {
     if (name) return this._builtInVariables.find((variable) => variable.name === name);
     else return this._builtInVariables;
   }
 
-  public getCustomTemplate(name: string): any | undefined;
-  public getCustomTemplate(): any[];
-  public getCustomTemplate(name?: string) {
+  public getCustomTemplate(name: string): GtmItem | undefined;
+  public getCustomTemplate(): GtmItem[];
+  public getCustomTemplate(name?: string): GtmItem[] | GtmItem | undefined {
     if (name) return this._customTemplates.find((template) => template.name === name);
     else return this._customTemplates;
+  }
+
+  public setFolder(name: string, data: any) {
+    const folder = this.getFolder(name);
+    if (folder) {
+      Object.assign(folder, data);
+    } else {
+      const occupiedIds = this._folders.map((folder) => folder.folderId);
+      data.id = occupiedIds.includes(data.folderId) ? Math.max(...occupiedIds) + 1 : data.folderId;
+      this._folders.push(data);
+    }
+
+    return this.save();
   }
 
   public setTag(name: string, data: any) {
@@ -212,7 +229,8 @@ export class GtmExportContentProvider {
   }
 
   public setParentFolder(item: any, folder: string | null) {
-    item.parentFolderId = folder;
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+    item.parentFolderId = folderId;
     return this.save();
   }
 
