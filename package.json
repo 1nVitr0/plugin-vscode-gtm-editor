@@ -1,7 +1,8 @@
 {
   "name": "gtm-editor",
+  "preview": true,
   "displayName": "Google Tag Manager editor Support",
-  "description": "View and edit Googler Tag Manager Workspace Exports",
+  "description": "View and edit Google Tag Manager Workspace Exports",
   "icon": "resources/icon.png",
   "license": "MIT",
   "author": "1nVitr0",
@@ -15,13 +16,19 @@
     "vscode": "^1.73.0"
   },
   "categories": [
-    "Formatters",
     "Programming Languages",
     "Other"
   ],
-  "keywords": [],
+  "keywords": [
+    "google tag manager",
+    "gtm",
+    "file system",
+    "edit",
+    "view"
+  ],
   "activationEvents": [
-    "onFileSystem:gtm"
+    "onFileSystem:gtm",
+    "onCommand:gtm-editor.openGtmExport"
   ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
@@ -29,7 +36,8 @@
     "menus": {
       "explorer/context": [
         {
-          "command": "gtm-editor.openGtmExport"
+          "command": "gtm-editor.openGtmExport",
+          "group": "navigation"
         }
       ]
     },
@@ -131,9 +139,5 @@
       ]
     ]
   },
-  "dependencies": {
-    "flat": "^6.0.1",
-    "parse-json": "^8.0.1",
-    "strip-json-comments": "^5.0.1"
-  }
+  "dependencies": {}
 }
