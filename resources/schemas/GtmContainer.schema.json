@@ -1,0 +1,155 @@
+{
+  "type": "object",
+  "properties": {
+    "publicId": {
+      "description": "Container Public ID",
+      "type": "string"
+    },
+    "usageContext": {
+      "description": "List of Usage Contexts for the Container.\nValid values include: web, android, or ios",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GtmUsageContext"
+      }
+    },
+    "features": {
+      "$ref": "#/definitions/GtmFeatures",
+      "description": "Read-only Container feature set"
+    },
+    "tagIds": {
+      "description": "All Tag IDs that refer to this Container",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "accountId": {
+      "description": "GTM Account ID",
+      "type": "string"
+    },
+    "containerId": {
+      "description": "The Container ID uniquely identifies the GTM Container",
+      "type": "string"
+    },
+    "path": {
+      "description": "relative path",
+      "type": "string"
+    },
+    "name": {
+      "description": "Display name",
+      "type": "string"
+    },
+    "tagManagerUrl": {
+      "description": "Auto generated link to the tag manager UI",
+      "type": "string"
+    },
+    "fingerprint": {
+      "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+      "type": "string"
+    },
+    "notes": {
+      "description": "User notes",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "accountId",
+    "containerId",
+    "features",
+    "fingerprint",
+    "name",
+    "publicId",
+    "tagIds",
+    "usageContext"
+  ],
+  "definitions": {
+    "GtmUsageContext": {
+      "type": "string",
+      "enum": [
+        "ANDROID",
+        "IOS",
+        "WEB"
+      ]
+    },
+    "GtmFeatures": {
+      "type": "object",
+      "properties": {
+        "supportBuiltInVariables": {
+          "description": "Whether this Container supports built-in variables",
+          "type": "boolean"
+        },
+        "supportClients": {
+          "description": "Whether this Container supports clients",
+          "type": "boolean"
+        },
+        "supportEnvironments": {
+          "description": "Whether this Container supports environments",
+          "type": "boolean"
+        },
+        "supportFolders": {
+          "description": "Whether this Container supports folders",
+          "type": "boolean"
+        },
+        "supportGtagConfigs": {
+          "description": "Whether this Container supports Google tag config",
+          "type": "boolean"
+        },
+        "supportTags": {
+          "description": "Whether this Container supports tags",
+          "type": "boolean"
+        },
+        "supportTemplates": {
+          "description": "Whether this Container supports templates",
+          "type": "boolean"
+        },
+        "supportTransformations": {
+          "description": "Whether this Container supports transformations",
+          "type": "boolean"
+        },
+        "supportTriggers": {
+          "description": "Whether this Container supports triggers",
+          "type": "boolean"
+        },
+        "supportUserPermissions": {
+          "description": "Whether this Container supports user permissions managed by GTM",
+          "type": "boolean"
+        },
+        "supportVariables": {
+          "description": "Whether this Container supports variables",
+          "type": "boolean"
+        },
+        "supportVersions": {
+          "description": "Whether this Container supports Container versions",
+          "type": "boolean"
+        },
+        "supportWorkspaces": {
+          "description": "Whether this Container supports workspaces",
+          "type": "boolean"
+        },
+        "supportZones": {
+          "description": "Whether this Container supports zones",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "supportBuiltInVariables",
+        "supportClients",
+        "supportEnvironments",
+        "supportFolders",
+        "supportGtagConfigs",
+        "supportTags",
+        "supportTemplates",
+        "supportTransformations",
+        "supportTriggers",
+        "supportUserPermissions",
+        "supportVariables",
+        "supportVersions",
+        "supportWorkspaces",
+        "supportZones"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

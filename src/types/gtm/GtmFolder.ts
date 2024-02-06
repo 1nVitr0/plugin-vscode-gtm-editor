@@ -1,5 +1,6 @@
-import { GtmProperty } from "./GtmProperty";
+import { GtmPropertyWithFolder } from "./GtmPropertyWithFolder";
 
-export interface GtmFolder extends GtmProperty {
-  folderId: string;
+export interface GtmFolder extends GtmPropertyWithFolder {
+  /** The Folder ID uniquely identifies the GTM Folder */
+  folderId: `${number}`;
 }

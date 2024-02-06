@@ -14,12 +14,12 @@ import {
 } from "vscode";
 import { GtmExportContentProvider } from "./GtmExportContentsProvider";
 import { GtmPath } from "../types/GtmPath";
-import { GtmProperty } from "../types/gtm/GtmProperty";
+import { GtmPropertyWithFolder } from "../types/gtm/GtmPropertyWithFolder";
 import { GtmFolder } from "../types/gtm/GtmFolder";
 import { GtmTag } from "../types/gtm/GtmTag";
 import { GtmTrigger } from "../types/gtm/GtmTrigger";
 import { GtmVariable } from "../types/gtm/GtmVariable";
-import { GtmBuiltinVariable } from "../types/gtm/GtmBuiltinVariable";
+import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
 import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 import { GtmContainer } from "../types/gtm/GtmContainer";
 
@@ -269,8 +269,8 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (original && !overwrite) throw FileSystemError.FileExists(uri);
     if (!accountId || !containerId || !itemType || !itemName) throw FileSystemError.Unavailable(uri);
 
-    const item = JSON.parse(data.toString()) as GtmProperty;
-    const originalItem = original ? (JSON.parse(original.toString()) as GtmProperty) : null;
+    const item = JSON.parse(data.toString()) as GtmPropertyWithFolder;
+    const originalItem = original ? (JSON.parse(original.toString()) as GtmPropertyWithFolder) : null;
     const event = { type: create ? FileChangeType.Created : FileChangeType.Changed, uri };
 
     if (originalItem && (item.accountId !== originalItem.accountId || item.containerId !== originalItem.containerId)) {
@@ -315,7 +315,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         this._fireSoon(event);
         break;
       case "builtInVariables":
-        content.setBuiltInVariable(itemName, item as GtmBuiltinVariable);
+        content.setBuiltInVariable(itemName, item as GtmBuiltInVariable);
         this._fireSoon(event);
         break;
       case "customTemplates":

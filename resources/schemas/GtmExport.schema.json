@@ -1,0 +1,1490 @@
+{
+  "type": "object",
+  "properties": {
+    "exportFormatVersion": {
+      "type": "number",
+      "const": 2
+    },
+    "exportTime": {
+      "type": "string"
+    },
+    "containerVersion": {
+      "$ref": "#/definitions/GtmContainerVersion"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "containerVersion",
+    "exportFormatVersion",
+    "exportTime"
+  ],
+  "definitions": {
+    "GtmContainerVersion": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "containerVersionId": {
+          "type": "string"
+        },
+        "container": {
+          "$ref": "#/definitions/GtmContainer"
+        },
+        "tag": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmTag"
+          }
+        },
+        "trigger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmTrigger"
+          }
+        },
+        "variable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmVariable"
+          }
+        },
+        "folder": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmFolder"
+          }
+        },
+        "builtInVariable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmBuiltInVariable"
+          }
+        },
+        "customTemplate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmCustomTemplate"
+          }
+        },
+        "parentFolderId": {
+          "description": "Parent folder id",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "builtInVariable",
+        "container",
+        "containerId",
+        "containerVersionId",
+        "customTemplate",
+        "fingerprint",
+        "folder",
+        "name",
+        "path",
+        "tag",
+        "trigger",
+        "variable"
+      ]
+    },
+    "GtmContainer": {
+      "type": "object",
+      "properties": {
+        "publicId": {
+          "description": "Container Public ID",
+          "type": "string"
+        },
+        "usageContext": {
+          "description": "List of Usage Contexts for the Container.\nValid values include: web, android, or ios",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmUsageContext"
+          }
+        },
+        "features": {
+          "$ref": "#/definitions/GtmFeatures",
+          "description": "Read-only Container feature set"
+        },
+        "tagIds": {
+          "description": "All Tag IDs that refer to this Container",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "containerId",
+        "features",
+        "fingerprint",
+        "name",
+        "publicId",
+        "tagIds",
+        "usageContext"
+      ]
+    },
+    "GtmUsageContext": {
+      "type": "string",
+      "enum": [
+        "ANDROID",
+        "IOS",
+        "WEB"
+      ]
+    },
+    "GtmFeatures": {
+      "type": "object",
+      "properties": {
+        "supportBuiltInVariables": {
+          "description": "Whether this Container supports built-in variables",
+          "type": "boolean"
+        },
+        "supportClients": {
+          "description": "Whether this Container supports clients",
+          "type": "boolean"
+        },
+        "supportEnvironments": {
+          "description": "Whether this Container supports environments",
+          "type": "boolean"
+        },
+        "supportFolders": {
+          "description": "Whether this Container supports folders",
+          "type": "boolean"
+        },
+        "supportGtagConfigs": {
+          "description": "Whether this Container supports Google tag config",
+          "type": "boolean"
+        },
+        "supportTags": {
+          "description": "Whether this Container supports tags",
+          "type": "boolean"
+        },
+        "supportTemplates": {
+          "description": "Whether this Container supports templates",
+          "type": "boolean"
+        },
+        "supportTransformations": {
+          "description": "Whether this Container supports transformations",
+          "type": "boolean"
+        },
+        "supportTriggers": {
+          "description": "Whether this Container supports triggers",
+          "type": "boolean"
+        },
+        "supportUserPermissions": {
+          "description": "Whether this Container supports user permissions managed by GTM",
+          "type": "boolean"
+        },
+        "supportVariables": {
+          "description": "Whether this Container supports variables",
+          "type": "boolean"
+        },
+        "supportVersions": {
+          "description": "Whether this Container supports Container versions",
+          "type": "boolean"
+        },
+        "supportWorkspaces": {
+          "description": "Whether this Container supports workspaces",
+          "type": "boolean"
+        },
+        "supportZones": {
+          "description": "Whether this Container supports zones",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "supportBuiltInVariables",
+        "supportClients",
+        "supportEnvironments",
+        "supportFolders",
+        "supportGtagConfigs",
+        "supportTags",
+        "supportTemplates",
+        "supportTransformations",
+        "supportTriggers",
+        "supportUserPermissions",
+        "supportVariables",
+        "supportVersions",
+        "supportWorkspaces",
+        "supportZones"
+      ]
+    },
+    "GtmTag": {
+      "type": "object",
+      "properties": {
+        "tagId": {
+          "description": "The Tag ID uniquely identifies the GTM Tag",
+          "type": "string"
+        },
+        "type": {
+          "description": "GTM Tag Type",
+          "type": "string"
+        },
+        "consentSettings": {
+          "description": "Consent settings of a tag",
+          "type": "object",
+          "properties": {
+            "consentStatus": {
+              "$ref": "#/definitions/GtmConsentStatus",
+              "description": "The tag's consent status. If set to NEEDED, the runtime will check that\nthe consent types specified by the consent_type field have been granted"
+            },
+            "consentType": {
+              "$ref": "#/definitions/GtmListParameter<GtmTemplateParameter>",
+              "description": "The type of consents to check for during tag firing if in\nthe consent NEEDED state"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "consentStatus",
+            "consentType"
+          ]
+        },
+        "firingRuleId": {
+          "description": "Firing rule IDs. A tag will fire when any of the listed rules are true and\nall of its blockingRuleIds (if any specified) are false",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blockingRuleId": {
+          "description": "Blocking rule IDs. If any of the listed rules evaluate to true,\nthe tag will not fire",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "firingTriggerId": {
+          "description": "Firing trigger IDs. A tag will fire when any of the listed triggers are true\nand all of its blockingTriggerIds (if any specified) are false",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "liveOnly": {
+          "description": "If set to true, this tag will only fire in the live environment\n(e.g. not in preview or debug mode)",
+          "type": "boolean"
+        },
+        "monitoringMetadata": {
+          "$ref": "#/definitions/GtmMapParameter<GtmTemplateParameter>",
+          "description": "A map of key-value pairs of tag metadata to be included\nin the event data for tag monitoring"
+        },
+        "parameter": {
+          "description": "The tag's parameters",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyDeepParameter"
+          }
+        },
+        "paused": {
+          "description": "Indicates whether the tag is paused, which prevents the tag from firing",
+          "type": "boolean"
+        },
+        "priority": {
+          "$ref": "#/definitions/GtmIntegerParameter",
+          "description": "User defined numeric priority of the tag.\nTags are fired asynchronously in order of priority.\nTags with higher numeric value fire first.\nA tag's priority can be a positive or negative value.\nThe default value is 0"
+        },
+        "scheduleStartMs": {
+          "description": "The start timestamp in milliseconds to schedule a tag",
+          "type": "number"
+        },
+        "scheduleEndMs": {
+          "description": "The end timestamp in milliseconds to schedule a tag",
+          "type": "number"
+        },
+        "setupTag": {
+          "description": "The list of setup tags. Currently we only allow one",
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "tagName": {
+                  "description": "The name of the setup tag",
+                  "type": "string"
+                },
+                "stopOnSetupFailure": {
+                  "description": "If true, fire the main tag if and only if the setup tag fires successfully.\nIf false, fire the main tag regardless of setup tag firing status",
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "stopOnSetupFailure",
+                "tagName"
+              ]
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "teardownTag": {
+          "description": "The list of teardown tags. Currently we only allow one",
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "tagName": {
+                  "description": "The name of the teardown tag",
+                  "type": "string"
+                },
+                "stopTeardownOnFailure": {
+                  "description": "If true, fire the teardown tag if and only if the main tag fires successfully.\nIf false, fire the teardown tag regardless of main tag firing status",
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "stopTeardownOnFailure",
+                "tagName"
+              ]
+            }
+          ],
+          "minItems": 1,
+          "maxItems": 1
+        },
+        "parentFolderId": {
+          "description": "Parent folder id",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "consentSettings",
+        "containerId",
+        "fingerprint",
+        "monitoringMetadata",
+        "name",
+        "parameter",
+        "priority",
+        "setupTag",
+        "tagId",
+        "teardownTag",
+        "type"
+      ]
+    },
+    "GtmConsentStatus": {
+      "type": "string",
+      "enum": [
+        "NEEDED",
+        "NOT_NEEDED",
+        "NOT_SET"
+      ]
+    },
+    "GtmListParameter<GtmTemplateParameter>": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Omit<GtmTemplateParameter,\"key\">"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "LIST"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "list",
+        "type"
+      ]
+    },
+    "Omit<GtmTemplateParameter,\"key\">": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "TEMPLATE"
+        },
+        "value": {
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmMapParameter<GtmTemplateParameter>": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmTemplateParameter"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "MAP"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "map",
+        "type"
+      ]
+    },
+    "GtmTemplateParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "TEMPLATE"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmAnyDeepParameter": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmReferenceParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmTemplateParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmMapParameter<GtmAnyDeepParameter>"
+        },
+        {
+          "$ref": "#/definitions/GtmListParameter<GtmAnyDeepParameter>"
+        }
+      ]
+    },
+    "GtmBooleanParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "enum": [
+            "false",
+            "true"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "BOOLEAN"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmIntegerParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "INTEGER"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmReferenceParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/GtmParameter.Type",
+          "description": "The parameter type"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmParameter.Type": {
+      "enum": [
+        "TAG_REFERENCE",
+        "TRIGGER_REFERENCE"
+      ],
+      "type": "string"
+    },
+    "GtmMapParameter<GtmAnyDeepParameter>": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyDeepParameter"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "MAP"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "map",
+        "type"
+      ]
+    },
+    "GtmListParameter<GtmAnyDeepParameter>": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Omit<GtmAnyDeepParameter,\"key\">"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "LIST"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "list",
+        "type"
+      ]
+    },
+    "Omit<GtmAnyDeepParameter,\"key\">": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/GtmParameter.Type_1",
+          "description": "The parameter type"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ]
+    },
+    "GtmParameter.Type_1": {
+      "enum": [
+        "BOOLEAN",
+        "INTEGER",
+        "LIST",
+        "MAP",
+        "TAG_REFERENCE",
+        "TEMPLATE",
+        "TRIGGER_REFERENCE"
+      ],
+      "type": "string"
+    },
+    "GtmTrigger": {
+      "type": "object",
+      "properties": {
+        "triggerId": {
+          "description": "The Trigger ID uniquely identifies the GTM Trigger",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/GtmTriggerType",
+          "description": "The Trigger ID uniquely identifies the GTM Trigger"
+        },
+        "autoEventFilter": {
+          "description": "Used in the case of auto event tracking",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmFilter"
+          }
+        },
+        "checkValidation": {
+          "description": "Whether or not we should only fire tags if the form submit or link click event\nis not cancelled by some other event handler (e.g. because of validation).\nOnly valid for Form Submission and Link Click triggers",
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        "continuousTimeMinMilliseconds": {
+          "description": "A visibility trigger minimum continuous visible time (in milliseconds).\nOnly valid for AMP Visibility trigger",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "customEventFilter": {
+          "description": "Used in the case of custom event, which is fired if all Conditions are true",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmFilter"
+          }
+        },
+        "eventName": {
+          "description": "Name of the GTM event that is fired.\nOnly valid for Timer triggers",
+          "$ref": "#/definitions/GtmTemplateParameter"
+        },
+        "filter": {
+          "description": "The trigger will only fire iff all Conditions are true",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmFilter"
+          }
+        },
+        "horizontalScrollPercentageList": {
+          "description": "List of integer percentage values for scroll triggers.\nThe trigger will fire when each percentage is reached when\nthe view is scrolled horizontally.\nOnly valid for AMP scroll triggers",
+          "$ref": "#/definitions/GtmListParameter<GtmIntegerParameter>"
+        },
+        "interval": {
+          "description": "Time between triggering recurring Timer Events (in milliseconds).\nOnly valid for Timer triggers",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "intervalSeconds": {
+          "description": "Time between Timer Events to fire (in seconds).\nOnly valid for AMP Timer trigger",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "limit": {
+          "description": "Limit of the number of GTM events this Timer Trigger will fire.\nIf no limit is set, we will continue to fire GTM events until\nthe user leaves the page. Only valid for Timer triggers",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "maxTimerLengthSeconds": {
+          "description": "Max time to fire Timer Events (in seconds).\nOnly valid for AMP Timer trigger",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "parameter": {
+          "description": "Additional parameters",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyDeepParameter"
+          }
+        },
+        "selector": {
+          "description": "A click trigger CSS selector (i.e. \"a\", \"button\" etc.).\nOnly valid for AMP Click trigger",
+          "$ref": "#/definitions/GtmTemplateParameter"
+        },
+        "totalTimeMinMilliseconds": {
+          "description": "A visibility trigger minimum total visible time (in milliseconds).\nOnly valid for AMP Visibility trigger",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "uniqueTriggerId": {
+          "$ref": "#/definitions/GtmTemplateParameter",
+          "description": "Globally unique id of the trigger that auto-generates this\n(a Form Submit, Link Click or Timer listener) if any.\nUsed to make incompatible auto-events work together with\ntrigger filtering based on trigger ids.\nThis value is populated during output generation since\nthe tags implied by triggers don't exist until then.\nOnly valid for Form Submit, Link Click and Timer triggers"
+        },
+        "verticalScrollPercentageList": {
+          "description": "List of integer percentage values for scroll triggers.\nThe trigger will fire when each percentage is reached when\nthe view is scrolled vertically.\nOnly valid for AMP scroll triggers",
+          "$ref": "#/definitions/GtmListParameter<GtmIntegerParameter>"
+        },
+        "visibilitySelector": {
+          "description": "A visibility trigger CSS selector (i.e. \"#id\").\nOnly valid for AMP Visibility trigger",
+          "$ref": "#/definitions/GtmTemplateParameter"
+        },
+        "visiblePercentageMax": {
+          "description": "A visibility trigger maximum percent visibility.\nOnly valid for AMP Visibility trigger",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "visiblePercentageMin": {
+          "description": "A visibility trigger minimum percent visibility.\nOnly valid for AMP Visibility trigger",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "waitForTags": {
+          "description": "Whether or not we should delay the form submissions or link opening until\nall of the tags have fired (by preventing the default action and\nlater simulating the default action).\nOnly valid for Form Submission and Link Click triggers",
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        "waitForTagsTimeout": {
+          "description": "How long to wait (in milliseconds) for tags to fire\nwhen 'waits_for_tags' above evaluates to true.\nOnly valid for Form Submission and Link Click triggers",
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        "parentFolderId": {
+          "description": "Parent folder id",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "containerId",
+        "fingerprint",
+        "name",
+        "parameter",
+        "triggerId",
+        "type",
+        "uniqueTriggerId"
+      ]
+    },
+    "GtmTriggerType": {
+      "type": "string",
+      "enum": [
+        "ALWAYS",
+        "AMP_CLICK",
+        "AMP_SCROLL",
+        "AMP_TIMER",
+        "AMP_VISIBILITY",
+        "CLICK",
+        "CONSENT_INIT",
+        "CUSTOM_EVENT",
+        "DOM_READY",
+        "ELEMENT_VISIBILITY",
+        "EVENT_TYPE_UNSPECIFIED",
+        "FIREBASE_APP_EXCEPTION",
+        "FIREBASE_APP_UPDATE",
+        "FIREBASE_CAMPAIGN",
+        "FIREBASE_FIRST_OPEN",
+        "FIREBASE_IN_APP_PURCHASE",
+        "FIREBASE_NOTIFICATION_DISMISS",
+        "FIREBASE_NOTIFICATION_FOREGROUND",
+        "FIREBASE_NOTIFICATION_OPEN",
+        "FIREBASE_NOTIFICATION_RECEIVE",
+        "FIREBASE_OS_UPDATE",
+        "FIREBASE_SESSION_START",
+        "FIREBASE_USER_ENGAGEMENT",
+        "FORM_SUBMISSION",
+        "HISTORY_CHANGE",
+        "INIT",
+        "JS_ERROR",
+        "LINK_CLICK",
+        "PAGEVIEW",
+        "SCROLL_DEPTH",
+        "SERVER_PAGEVIEW",
+        "TIMER",
+        "TRIGGER_GROUP",
+        "WINDOW_LOADED",
+        "YOU_TUBE_VIDEO"
+      ]
+    },
+    "GtmFilter": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/FilterType",
+          "description": "The type of operator for this condition"
+        },
+        "parameter": {
+          "description": "A list of named parameters (key/value), depending on the condition's type\n\nNotes:\n  - For binary operators, include parameters named arg0 and arg1 for specifying\n    the left and right operands, respectively\n  - At this time, the left operand (arg0) must be a reference to a variable.\n  - For case-insensitive Regex matching, include a boolean parameter named\n    ignore_case that is set to true. If not specified or set to any other value,\n    the matching will be case sensitive\n  - To negate an operator, include a boolean parameter named\n    negate boolean parameter that is set to true",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyListParameter"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "parameter",
+        "type"
+      ]
+    },
+    "FilterType": {
+      "type": "string",
+      "enum": [
+        "CONDITION_TYPE_UNSPECIFIED",
+        "CONTAINS",
+        "CSS_SELECTOR",
+        "ENDS_WITH",
+        "EQUALS",
+        "GREATER",
+        "GREATER_OR_EQUALS",
+        "LESS",
+        "LESS_OR_EQUALS",
+        "MATCH_REGEX",
+        "STARTS_WITH",
+        "URL_MATCHES"
+      ]
+    },
+    "GtmAnyListParameter": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Omit<GtmAnyValueParameter,\"key\">"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "LIST"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "list",
+        "type"
+      ]
+    },
+    "Omit<GtmAnyValueParameter,\"key\">": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/GtmParameter.Type_2",
+          "description": "The parameter type"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmParameter.Type_2": {
+      "enum": [
+        "BOOLEAN",
+        "INTEGER",
+        "TAG_REFERENCE",
+        "TEMPLATE",
+        "TRIGGER_REFERENCE"
+      ],
+      "type": "string"
+    },
+    "GtmListParameter<GtmIntegerParameter>": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Omit<GtmIntegerParameter,\"key\">"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "LIST"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "list",
+        "type"
+      ]
+    },
+    "Omit<GtmIntegerParameter,\"key\">": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "INTEGER"
+        },
+        "value": {
+          "type": "number"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmVariable": {
+      "type": "object",
+      "properties": {
+        "variableId": {
+          "description": "The Variable ID uniquely identifies the GTM Variable",
+          "type": "string"
+        },
+        "type": {
+          "description": "GTM Variable Type",
+          "type": "string"
+        },
+        "disablingTriggerId": {
+          "description": "For mobile containers only: A list of trigger IDs for disabling conditional variables;\nthe variable is enabled if one of the enabling trigger is true\nwhile all the disabling trigger are false.\nTreated as an unordered set",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enablingTriggerId": {
+          "description": "For mobile containers only: A list of trigger IDs for enabling conditional variables;\nthe variable is enabled if one of the enabling triggers is true\nwhile all the disabling triggers are false.\nTreated as an unordered set",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "formatValue": {
+          "description": "Option to convert a variable value to other value",
+          "$ref": "#/definitions/GtmFormatValue"
+        },
+        "parameter": {
+          "description": "The variable's parameters",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyParameter"
+          }
+        },
+        "scheduleStartMs": {
+          "description": "The start timestamp in milliseconds to schedule a variable",
+          "type": "number"
+        },
+        "scheduleEndMs": {
+          "description": "The end timestamp in milliseconds to schedule a variable",
+          "type": "number"
+        },
+        "parentFolderId": {
+          "description": "Parent folder id",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "containerId",
+        "fingerprint",
+        "name",
+        "type",
+        "variableId"
+      ]
+    },
+    "GtmFormatValue": {
+      "type": "object",
+      "properties": {
+        "caseConversionType": {
+          "description": "The option to convert a string-type variable value to either lowercase or uppercase",
+          "enum": [
+            "LOWERCASE",
+            "NONE",
+            "UPPERCASE"
+          ],
+          "type": "string"
+        },
+        "convertFalseToValue": {
+          "description": "The value to convert if a variable value is false",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        },
+        "convertNullToValue": {
+          "description": "The value to convert if a variable value is null",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        },
+        "convertTrueToValue": {
+          "description": "The value to convert if a variable value is true",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        },
+        "convertUndefinedToValue": {
+          "description": "The value to convert if a variable value is undefined",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "GtmAnyParameter": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmReferenceParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmTemplateParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmAnyMapParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmAnyListParameter"
+        }
+      ]
+    },
+    "GtmAnyMapParameter": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyValueParameter"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "MAP"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "map",
+        "type"
+      ]
+    },
+    "GtmAnyValueParameter": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmReferenceParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmTemplateParameter"
+        }
+      ]
+    },
+    "GtmFolder": {
+      "type": "object",
+      "properties": {
+        "folderId": {
+          "description": "The Folder ID uniquely identifies the GTM Folder",
+          "type": "string"
+        },
+        "parentFolderId": {
+          "description": "Parent folder id",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "containerId",
+        "fingerprint",
+        "folderId",
+        "name"
+      ]
+    },
+    "GtmBuiltInVariable": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The type of built-in variable to enable",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "containerId",
+        "fingerprint",
+        "name",
+        "type"
+      ]
+    },
+    "GtmCustomTemplate": {
+      "type": "object",
+      "properties": {
+        "templateId": {
+          "description": "The relative resource name of the custom template to create",
+          "type": "string"
+        },
+        "templateData": {
+          "description": "The custom template data",
+          "type": "string"
+        },
+        "accountId": {
+          "description": "GTM Account ID",
+          "type": "string"
+        },
+        "containerId": {
+          "description": "The Container ID uniquely identifies the GTM Container",
+          "type": "string"
+        },
+        "path": {
+          "description": "relative path",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name",
+          "type": "string"
+        },
+        "tagManagerUrl": {
+          "description": "Auto generated link to the tag manager UI",
+          "type": "string"
+        },
+        "fingerprint": {
+          "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+          "type": "string"
+        },
+        "notes": {
+          "description": "User notes",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "containerId",
+        "fingerprint",
+        "name",
+        "templateData",
+        "templateId"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
