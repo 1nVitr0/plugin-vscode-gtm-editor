@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/1nVitr0/plugin-vscode-gtm-editor/compare/v1.0.0...v1.1.0) (2024-02-06)
+
+
+### Features
+
+* add intellisense / json validation support ([ad1b060](https://github.com/1nVitr0/plugin-vscode-gtm-editor/commit/ad1b060d9834ae9eba0d50c9ee42693c7e33d084))
+
 # 1.0.0 (2024-02-06)
 
 
