@@ -1,5 +1,4 @@
 import { Uri, workspace } from "vscode";
-import { GtmProperty } from "../types/gtm/GtmProperty";
 import { GtmExport } from "../types/gtm/GtmExport";
 import { GtmContainer } from "../types/gtm/GtmContainer";
 import { GtmTag } from "../types/gtm/GtmTag";
@@ -10,15 +9,30 @@ import { GtmBuiltinVariable } from "../types/gtm/GtmBuiltinVariable";
 import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 
 export class GtmExportContentProvider {
-  public readonly accountId: string;
-  public readonly containerId: string;
-  public readonly containerVersionId: string;
-  public readonly fingerprint: string;
-  public readonly tagManagerUrl: string;
   public readonly exportTime: Date;
 
   public get updateTime(): Date {
     return new Date(this._data.exportTime);
+  }
+
+  public get accountId(): string {
+    return this._data.containerVersion.accountId;
+  }
+
+  public get containerId(): string {
+    return this._data.containerVersion.containerId;
+  }
+
+  public get containerVersionId(): string {
+    return this._data.containerVersion.containerVersionId;
+  }
+
+  public get fingerprint(): string {
+    return this._data.containerVersion.fingerprint;
+  }
+
+  public get tagManagerUrl(): string {
+    return this._data.containerVersion.tagManagerUrl;
   }
 
   private _data: GtmExport;
@@ -29,6 +43,7 @@ export class GtmExportContentProvider {
   private _folders: GtmFolder[];
   private _builtInVariables: GtmBuiltinVariable[];
   private _customTemplates: GtmCustomTemplate[];
+  private _saveSoonHandle?: NodeJS.Timer;
 
   private set updateTime(value: Date) {
     this._data.exportTime = value.toISOString();
@@ -39,27 +54,9 @@ export class GtmExportContentProvider {
 
     const {
       exportTime,
-      containerVersion: {
-        accountId,
-        containerId,
-        containerVersionId,
-        fingerprint,
-        tagManagerUrl,
-        container,
-        tag,
-        trigger,
-        variable,
-        folder,
-        builtInVariable,
-        customTemplate,
-      },
+      containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
     } = this._data;
 
-    this.accountId = accountId;
-    this.containerId = containerId;
-    this.containerVersionId = containerVersionId;
-    this.fingerprint = fingerprint;
-    this.tagManagerUrl = tagManagerUrl;
     this.exportTime = new Date(exportTime);
 
     this._container = container;
@@ -71,7 +68,24 @@ export class GtmExportContentProvider {
     this._customTemplates = customTemplate;
   }
 
-  public getContainer(): any {
+  public async reload() {
+    const data = await workspace.fs.readFile(this.gtmExportUri);
+    this._data = JSON.parse(data.toString());
+
+    const {
+      containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
+    } = this._data;
+    
+    this._container = container;
+    this._tags = tag;
+    this._triggers = trigger;
+    this._variables = variable;
+    this._folders = folder;
+    this._builtInVariables = builtInVariable;
+    this._customTemplates = customTemplate;
+  }
+
+  public getContainer(): GtmContainer {
     return this._container;
   }
 
@@ -86,27 +100,34 @@ export class GtmExportContentProvider {
   public getTag(folder?: string | null): GtmTag[];
   public getTag(folder?: string | null, name?: string): GtmTag[] | GtmTag | undefined {
     const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
-    if (name) return this._tags.find((tag) => tag.name === name);
-    else if (folderId) return this._tags.filter((tag) => tag.parentFolderId === folderId);
-    else return this._tags;
+    const tags = folderId ? this._tags.filter((tag) => tag.parentFolderId === folderId) : this._tags;
+
+    if (name) return tags.find((tag) => tag.name === name);
+    else return tags;
   }
 
   public getTrigger(folder: string | undefined | null, name: string): GtmTrigger | undefined;
   public getTrigger(folder?: string | null): GtmTrigger[];
   public getTrigger(folder?: string | null, name?: string): GtmTrigger[] | GtmTrigger | undefined {
     const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
-    if (name) return this._triggers.find((trigger) => trigger.name === name);
-    else if (folderId) return this._triggers.filter((trigger) => trigger.parentFolderId === folderId);
-    else return this._triggers;
+    const triggers = folderId
+      ? this._triggers.filter((trigger) => trigger.parentFolderId === folderId)
+      : this._triggers;
+
+    if (name) return triggers.find((trigger) => trigger.name === name);
+    else return triggers;
   }
 
   public getVariable(folder: string | undefined | null, name: string): GtmVariable | undefined;
   public getVariable(folder?: string | null): GtmVariable[];
   public getVariable(folder?: string | null, name?: string): GtmVariable[] | GtmVariable | undefined {
     const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
-    if (name) return this._variables.find((variable) => variable.name === name);
-    else if (folderId) return this._variables.filter((variable) => variable.parentFolderId === folderId);
-    else return this._variables;
+    const variables = folderId
+      ? this._variables.filter((variable) => variable.parentFolderId === folderId)
+      : this._variables;
+
+    if (name) return variables.find((variable) => variable.name === name);
+    else return variables;
   }
 
   public getBuiltInVariable(name: string): GtmBuiltinVariable | undefined;
@@ -123,6 +144,11 @@ export class GtmExportContentProvider {
     else return this._customTemplates;
   }
 
+  public setContainer(data: GtmContainer) {
+    Object.assign(this._container, data);
+    return this.saveSoon();
+  }
+
   public setFolder(name: string, data: GtmFolder) {
     const folder = this.getFolder(name);
     if (folder) {
@@ -135,7 +161,7 @@ export class GtmExportContentProvider {
       this._folders.push(data);
     }
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public setTag(name: string, data: GtmTag) {
@@ -148,7 +174,7 @@ export class GtmExportContentProvider {
       this._tags.push(data);
     }
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public setTrigger(name: string, data: GtmTrigger) {
@@ -163,7 +189,7 @@ export class GtmExportContentProvider {
       this._triggers.push(data);
     }
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public setVariable(name: string, data: GtmVariable) {
@@ -178,15 +204,15 @@ export class GtmExportContentProvider {
       this._variables.push(data);
     }
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public setBuiltInVariable(name: string, data: GtmBuiltinVariable) {
     const variable = this.getBuiltInVariable(name);
     if (variable) Object.assign(variable, data);
-    else  this._builtInVariables.push(data);
+    else this._builtInVariables.push(data);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public setCustomTemplate(name: string, data: GtmCustomTemplate) {
@@ -194,54 +220,68 @@ export class GtmExportContentProvider {
     if (template) Object.assign(template, data);
     else this._customTemplates.push(data);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public deleteTag(name: string) {
     const index = this._tags.findIndex((tag) => tag.name === name);
     if (index !== -1) this._tags.splice(index, 1);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public deleteTrigger(name: string) {
     const index = this._triggers.findIndex((trigger) => trigger.name === name);
     if (index !== -1) this._triggers.splice(index, 1);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public deleteVariable(name: string) {
     const index = this._variables.findIndex((variable) => variable.name === name);
     if (index !== -1) this._variables.splice(index, 1);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public deleteBuiltInVariable(name: string) {
     const index = this._builtInVariables.findIndex((variable) => variable.name === name);
     if (index !== -1) this._builtInVariables.splice(index, 1);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public deleteCustomTemplate(name: string) {
     const index = this._customTemplates.findIndex((template) => template.name === name);
     if (index !== -1) this._customTemplates.splice(index, 1);
 
-    return this.save();
+    return this.saveSoon();
   }
 
   public setParentFolder(item: any, folder: string | null) {
     const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
     item.parentFolderId = folderId;
-    return this.save();
+    return this.saveSoon();
   }
+
+  public setAccountId(accountId: string) {
+    this._data.containerVersion.accountId = accountId;
+  }
+
+  public setContainerId(containerId: string) {}
 
   private save() {
     this.updateTime = new Date();
 
     const data = JSON.stringify(this._data, null, 2);
     return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
+  }
+
+  private saveSoon() {
+    if (this._saveSoonHandle) clearTimeout(this._saveSoonHandle);
+
+    this._saveSoonHandle = setTimeout(() => {
+      this.save();
+    }, 5);
   }
 }
