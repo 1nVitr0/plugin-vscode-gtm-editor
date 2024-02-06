@@ -5,8 +5,8 @@ export interface GtmPath {
   accountId?: string;
   containerId?: string;
   folder?: string;
-  itemType?: string;
-  id?: string;
+  itemType?: "folders" | "tags" | "triggers" | "variables" | "builtInVariables" | "customTemplates" | "container";
+  itemName?: string;
   accounts?: boolean;
   containers?: boolean;
 }
