@@ -5,7 +5,7 @@ import { GtmTag } from "../types/gtm/GtmTag";
 import { GtmTrigger } from "../types/gtm/GtmTrigger";
 import { GtmVariable } from "../types/gtm/GtmVariable";
 import { GtmFolder } from "../types/gtm/GtmFolder";
-import { GtmBuiltinVariable } from "../types/gtm/GtmBuiltinVariable";
+import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
 import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 
 export class GtmExportContentProvider {
@@ -31,7 +31,7 @@ export class GtmExportContentProvider {
     return this._data.containerVersion.fingerprint;
   }
 
-  public get tagManagerUrl(): string {
+  public get tagManagerUrl(): string | undefined {
     return this._data.containerVersion.tagManagerUrl;
   }
 
@@ -41,7 +41,7 @@ export class GtmExportContentProvider {
   private _triggers: GtmTrigger[];
   private _variables: GtmVariable[];
   private _folders: GtmFolder[];
-  private _builtInVariables: GtmBuiltinVariable[];
+  private _builtInVariables: GtmBuiltInVariable[];
   private _customTemplates: GtmCustomTemplate[];
   private _saveSoonHandle?: NodeJS.Timer;
 
@@ -75,7 +75,7 @@ export class GtmExportContentProvider {
     const {
       containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
     } = this._data;
-    
+
     this._container = container;
     this._tags = tag;
     this._triggers = trigger;
@@ -130,9 +130,9 @@ export class GtmExportContentProvider {
     else return variables;
   }
 
-  public getBuiltInVariable(name: string): GtmBuiltinVariable | undefined;
-  public getBuiltInVariable(): GtmBuiltinVariable[];
-  public getBuiltInVariable(name?: string): GtmBuiltinVariable[] | GtmBuiltinVariable | undefined {
+  public getBuiltInVariable(name: string): GtmBuiltInVariable | undefined;
+  public getBuiltInVariable(): GtmBuiltInVariable[];
+  public getBuiltInVariable(name?: string): GtmBuiltInVariable[] | GtmBuiltInVariable | undefined {
     if (name) return this._builtInVariables.find((variable) => variable.name === name);
     else return this._builtInVariables;
   }
@@ -156,7 +156,7 @@ export class GtmExportContentProvider {
     } else {
       const occupiedIds = this._folders.map((folder) => parseInt(folder.folderId));
       data.folderId = occupiedIds.includes(parseInt(data.folderId))
-        ? (Math.max(...occupiedIds) + 1).toString()
+        ? ((Math.max(...occupiedIds) + 1).toString() as `${number}`)
         : data.folderId;
       this._folders.push(data);
     }
@@ -170,7 +170,9 @@ export class GtmExportContentProvider {
       Object.assign(tag, data);
     } else {
       const occupiedIds = this._tags.map((tag) => parseInt(tag.tagId));
-      data.tagId = occupiedIds.includes(parseInt(data.tagId)) ? (Math.max(...occupiedIds) + 1).toString() : data.tagId;
+      data.tagId = occupiedIds.includes(parseInt(data.tagId))
+        ? ((Math.max(...occupiedIds) + 1).toString() as `${number}`)
+        : data.tagId;
       this._tags.push(data);
     }
 
@@ -184,7 +186,7 @@ export class GtmExportContentProvider {
     } else {
       const occupiedIds = this._triggers.map((trigger) => parseInt(trigger.triggerId));
       data.triggerId = occupiedIds.includes(parseInt(data.triggerId))
-        ? (Math.max(...occupiedIds) + 1).toString()
+        ? ((Math.max(...occupiedIds) + 1).toString() as `${number}`)
         : data.triggerId;
       this._triggers.push(data);
     }
@@ -207,7 +209,7 @@ export class GtmExportContentProvider {
     return this.saveSoon();
   }
 
-  public setBuiltInVariable(name: string, data: GtmBuiltinVariable) {
+  public setBuiltInVariable(name: string, data: GtmBuiltInVariable) {
     const variable = this.getBuiltInVariable(name);
     if (variable) Object.assign(variable, data);
     else this._builtInVariables.push(data);
@@ -264,11 +266,13 @@ export class GtmExportContentProvider {
     return this.saveSoon();
   }
 
-  public setAccountId(accountId: string) {
+  public setAccountId(accountId: `${number}`) {
     this._data.containerVersion.accountId = accountId;
   }
 
-  public setContainerId(containerId: string) {}
+  public setContainerId(containerId: `${number}`) {
+    this._data.containerVersion.containerId = containerId;
+  }
 
   private save() {
     this.updateTime = new Date();

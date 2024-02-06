@@ -1,4 +1,4 @@
-import { GtmBuiltinVariable } from "./GtmBuiltinVariable";
+import { GtmBuiltInVariable } from "./GtmBuiltInVariable";
 import { GtmContainer } from "./GtmContainer";
 import { GtmCustomTemplate } from "./GtmCustomTemplate";
 import { GtmFolder } from "./GtmFolder";
@@ -7,16 +7,14 @@ import { GtmTag } from "./GtmTag";
 import { GtmTrigger } from "./GtmTrigger";
 import { GtmVariable } from "./GtmVariable";
 
-export interface GtmContainerVersion extends GtmProperty {
+export interface GtmContainerVersion extends Omit<GtmProperty, "name"> {
   path: string;
-  containerVersionId: string;
-  fingerprint: string;
-  tagManagerUrl: string;
+  containerVersionId: `${number}`;
   container: GtmContainer;
   tag: GtmTag[];
   trigger: GtmTrigger[];
   variable: GtmVariable[];
   folder: GtmFolder[];
-  builtInVariable: GtmBuiltinVariable[];
+  builtInVariable: GtmBuiltInVariable[];
   customTemplate: GtmCustomTemplate[];
 }

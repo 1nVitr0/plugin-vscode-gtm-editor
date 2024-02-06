@@ -1,0 +1,417 @@
+{
+  "type": "object",
+  "properties": {
+    "variableId": {
+      "description": "The Variable ID uniquely identifies the GTM Variable",
+      "type": "string"
+    },
+    "type": {
+      "description": "GTM Variable Type",
+      "type": "string"
+    },
+    "disablingTriggerId": {
+      "description": "For mobile containers only: A list of trigger IDs for disabling conditional variables;\nthe variable is enabled if one of the enabling trigger is true\nwhile all the disabling trigger are false.\nTreated as an unordered set",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "enablingTriggerId": {
+      "description": "For mobile containers only: A list of trigger IDs for enabling conditional variables;\nthe variable is enabled if one of the enabling triggers is true\nwhile all the disabling triggers are false.\nTreated as an unordered set",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "formatValue": {
+      "description": "Option to convert a variable value to other value",
+      "$ref": "#/definitions/GtmFormatValue"
+    },
+    "parameter": {
+      "description": "The variable's parameters",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GtmAnyParameter"
+      }
+    },
+    "scheduleStartMs": {
+      "description": "The start timestamp in milliseconds to schedule a variable",
+      "type": "number"
+    },
+    "scheduleEndMs": {
+      "description": "The end timestamp in milliseconds to schedule a variable",
+      "type": "number"
+    },
+    "parentFolderId": {
+      "description": "Parent folder id",
+      "type": "string"
+    },
+    "accountId": {
+      "description": "GTM Account ID",
+      "type": "string"
+    },
+    "containerId": {
+      "description": "The Container ID uniquely identifies the GTM Container",
+      "type": "string"
+    },
+    "path": {
+      "description": "relative path",
+      "type": "string"
+    },
+    "name": {
+      "description": "Display name",
+      "type": "string"
+    },
+    "tagManagerUrl": {
+      "description": "Auto generated link to the tag manager UI",
+      "type": "string"
+    },
+    "fingerprint": {
+      "description": "The fingerprint of the property as computed at storage time.\nThis value is recomputed whenever the account is modified",
+      "type": "string"
+    },
+    "notes": {
+      "description": "User notes",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "accountId",
+    "containerId",
+    "fingerprint",
+    "name",
+    "type",
+    "variableId"
+  ],
+  "definitions": {
+    "GtmFormatValue": {
+      "type": "object",
+      "properties": {
+        "caseConversionType": {
+          "description": "The option to convert a string-type variable value to either lowercase or uppercase",
+          "enum": [
+            "LOWERCASE",
+            "NONE",
+            "UPPERCASE"
+          ],
+          "type": "string"
+        },
+        "convertFalseToValue": {
+          "description": "The value to convert if a variable value is false",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        },
+        "convertNullToValue": {
+          "description": "The value to convert if a variable value is null",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        },
+        "convertTrueToValue": {
+          "description": "The value to convert if a variable value is true",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        },
+        "convertUndefinedToValue": {
+          "description": "The value to convert if a variable value is undefined",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GtmBooleanParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmIntegerParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmReferenceParameter"
+            },
+            {
+              "$ref": "#/definitions/GtmTemplateParameter"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "GtmBooleanParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "enum": [
+            "false",
+            "true"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "BOOLEAN"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmIntegerParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "INTEGER"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmReferenceParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/GtmParameter.Type",
+          "description": "The parameter type"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmParameter.Type": {
+      "enum": [
+        "TAG_REFERENCE",
+        "TRIGGER_REFERENCE"
+      ],
+      "type": "string"
+    },
+    "GtmTemplateParameter": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "TEMPLATE"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmAnyParameter": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmReferenceParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmTemplateParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmAnyMapParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmAnyListParameter"
+        }
+      ]
+    },
+    "GtmAnyMapParameter": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GtmAnyValueParameter"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "MAP"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "map",
+        "type"
+      ]
+    },
+    "GtmAnyValueParameter": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/GtmBooleanParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmIntegerParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmReferenceParameter"
+        },
+        {
+          "$ref": "#/definitions/GtmTemplateParameter"
+        }
+      ]
+    },
+    "GtmAnyListParameter": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Omit<GtmAnyValueParameter,\"key\">"
+          }
+        },
+        "type": {
+          "description": "The parameter type",
+          "type": "string",
+          "const": "LIST"
+        },
+        "key": {
+          "description": "The named key that uniquely identifies a parameter",
+          "type": "string"
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "list",
+        "type"
+      ]
+    },
+    "Omit<GtmAnyValueParameter,\"key\">": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/GtmParameter.Type_1",
+          "description": "The parameter type"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "isWeakReference": {
+          "description": "Whether or not a reference type parameter is strongly or weakly referenced.\nOnly used by Transformations",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "GtmParameter.Type_1": {
+      "enum": [
+        "BOOLEAN",
+        "INTEGER",
+        "TAG_REFERENCE",
+        "TEMPLATE",
+        "TRIGGER_REFERENCE"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

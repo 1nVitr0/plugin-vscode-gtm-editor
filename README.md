@@ -20,13 +20,12 @@ The extension works by transforming the export into a file-system with directori
 
 - Display GTM export as a file-system
 - Move triggers, tags and variables between folders
-- Edit properties separately
+- Edit properties separately with intellisense
+- Intellisense for separate items or entire GTM exports
 - Auto-update folder when editing them in-the file
-- Deleting properties and entire folders
+- Deleting and moving properties and entire folders
 
 ### Known Issues
 
 - No renaming of `accountId` or `containerId`
-- No intellisense
-- No validation or protection against invalid JSON structure
-- No moving or copying items between multiple exports
+- No safe moving or copying items between multiple exports
