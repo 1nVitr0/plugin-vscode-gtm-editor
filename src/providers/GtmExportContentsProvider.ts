@@ -1,49 +1,62 @@
 import { Uri, workspace } from "vscode";
+import { GtmExport } from "../types/gtm/GtmExport";
+import { GtmContainer } from "../types/gtm/GtmContainer";
+import { GtmTag } from "../types/gtm/GtmTag";
+import { GtmTrigger } from "../types/gtm/GtmTrigger";
+import { GtmVariable } from "../types/gtm/GtmVariable";
+import { GtmFolder } from "../types/gtm/GtmFolder";
+import { GtmBuiltinVariable } from "../types/gtm/GtmBuiltinVariable";
+import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 
 export class GtmExportContentProvider {
-  public readonly accountId: string;
-  public readonly containerId: string;
-  public readonly containerVersionId: string;
-  public readonly fingerprint: string;
-  public readonly tagManagerUrl: string;
   public readonly exportTime: Date;
 
-  private _data: any;
-  private _container: any;
-  private _tags: any[];
-  private _triggers: any[];
-  private _variables: any[];
-  private _folders: any[];
-  private _builtInVariables: any[];
-  private _customTemplates: any[];
+  public get updateTime(): Date {
+    return new Date(this._data.exportTime);
+  }
 
-  constructor(private gtmExportUri: Uri) {
-    const content = workspace.fs.readFile(gtmExportUri);
-    this._data = JSON.parse(content.toString());
+  public get accountId(): string {
+    return this._data.containerVersion.accountId;
+  }
+
+  public get containerId(): string {
+    return this._data.containerVersion.containerId;
+  }
+
+  public get containerVersionId(): string {
+    return this._data.containerVersion.containerVersionId;
+  }
+
+  public get fingerprint(): string {
+    return this._data.containerVersion.fingerprint;
+  }
+
+  public get tagManagerUrl(): string {
+    return this._data.containerVersion.tagManagerUrl;
+  }
+
+  private _data: GtmExport;
+  private _container: GtmContainer;
+  private _tags: GtmTag[];
+  private _triggers: GtmTrigger[];
+  private _variables: GtmVariable[];
+  private _folders: GtmFolder[];
+  private _builtInVariables: GtmBuiltinVariable[];
+  private _customTemplates: GtmCustomTemplate[];
+  private _saveSoonHandle?: NodeJS.Timer;
+
+  private set updateTime(value: Date) {
+    this._data.exportTime = value.toISOString();
+  }
+
+  constructor(private gtmExportUri: Uri, initialContent: string) {
+    this._data = JSON.parse(initialContent.toString());
 
     const {
       exportTime,
-      containerVersion: {
-        accountId,
-        containerId,
-        containerVersionId,
-        fingerprint,
-        tagManagerUrl,
-        container,
-        tag,
-        trigger,
-        variable,
-        folder,
-        builtInVariable,
-        customTemplate,
-      },
+      containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
     } = this._data;
 
-    this.accountId = accountId;
-    this.containerId = containerId;
-    this.containerVersionId = containerVersionId;
-    this.fingerprint = fingerprint;
-    this.tagManagerUrl = tagManagerUrl;
     this.exportTime = new Date(exportTime);
 
     this._container = container;
@@ -55,102 +68,220 @@ export class GtmExportContentProvider {
     this._customTemplates = customTemplate;
   }
 
-  public getContainer(): any {
+  public async reload() {
+    const data = await workspace.fs.readFile(this.gtmExportUri);
+    this._data = JSON.parse(data.toString());
+
+    const {
+      containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
+    } = this._data;
+    
+    this._container = container;
+    this._tags = tag;
+    this._triggers = trigger;
+    this._variables = variable;
+    this._folders = folder;
+    this._builtInVariables = builtInVariable;
+    this._customTemplates = customTemplate;
+  }
+
+  public getContainer(): GtmContainer {
     return this._container;
   }
 
-  public getFolder(id: string): string | undefined;
-  public getFolder(): string[];
-  public getFolder(id?: string) {
-    if (id) return this._folders.find((folder) => folder.folderId === id)?.name;
-    else return this._folders.map((folder) => folder.name);
+  public getFolder(id: string): GtmFolder | undefined;
+  public getFolder(): GtmFolder[];
+  public getFolder(id?: string): GtmFolder | GtmFolder[] | undefined {
+    if (id) return this._folders.find((folder) => folder.name === id);
+    else return this._folders;
   }
 
-  public getTag(folder: string | null, name: string): any | undefined;
-  public getTag(folder?: string | null): any[];
-  public getTag(folder?: string | null, name?: string) {
-    if (name) return this._tags.find((tag) => tag.name === name);
-    else if (folder) return this._tags.filter((tag) => tag.parentFolderId === folder);
-    else return this._tags;
+  public getTag(folder: string | undefined | null, name: string): GtmTag | undefined;
+  public getTag(folder?: string | null): GtmTag[];
+  public getTag(folder?: string | null, name?: string): GtmTag[] | GtmTag | undefined {
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+    const tags = folderId ? this._tags.filter((tag) => tag.parentFolderId === folderId) : this._tags;
+
+    if (name) return tags.find((tag) => tag.name === name);
+    else return tags;
   }
 
-  public getTrigger(folder: string | null, name: string): any | undefined;
-  public getTrigger(folder?: string | null): any[];
-  public getTrigger(folder?: string | null, name?: string) {
-    if (name) return this._triggers.find((trigger) => trigger.name === name);
-    else if (folder) return this._triggers.filter((trigger) => trigger.parentFolderId === folder);
-    else return this._triggers;
+  public getTrigger(folder: string | undefined | null, name: string): GtmTrigger | undefined;
+  public getTrigger(folder?: string | null): GtmTrigger[];
+  public getTrigger(folder?: string | null, name?: string): GtmTrigger[] | GtmTrigger | undefined {
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+    const triggers = folderId
+      ? this._triggers.filter((trigger) => trigger.parentFolderId === folderId)
+      : this._triggers;
+
+    if (name) return triggers.find((trigger) => trigger.name === name);
+    else return triggers;
   }
 
-  public getVariable(folder: string | null, name: string): any | undefined;
-  public getVariable(folder?: string | null): any[];
-  public getVariable(folder?: string | null, name?: string) {
-    if (name) return this._variables.find((variable) => variable.name === name);
-    else if (folder) return this._variables.filter((variable) => variable.parentFolderId === folder);
-    else return this._variables;
+  public getVariable(folder: string | undefined | null, name: string): GtmVariable | undefined;
+  public getVariable(folder?: string | null): GtmVariable[];
+  public getVariable(folder?: string | null, name?: string): GtmVariable[] | GtmVariable | undefined {
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+    const variables = folderId
+      ? this._variables.filter((variable) => variable.parentFolderId === folderId)
+      : this._variables;
+
+    if (name) return variables.find((variable) => variable.name === name);
+    else return variables;
   }
 
-  public getBuiltInVariable(name: string): any | undefined;
-  public getBuiltInVariable(): any[];
-  public getBuiltInVariable(name?: string) {
+  public getBuiltInVariable(name: string): GtmBuiltinVariable | undefined;
+  public getBuiltInVariable(): GtmBuiltinVariable[];
+  public getBuiltInVariable(name?: string): GtmBuiltinVariable[] | GtmBuiltinVariable | undefined {
     if (name) return this._builtInVariables.find((variable) => variable.name === name);
     else return this._builtInVariables;
   }
 
-  public getCustomTemplate(name: string): any | undefined;
-  public getCustomTemplate(): any[];
-  public getCustomTemplate(name?: string) {
+  public getCustomTemplate(name: string): GtmCustomTemplate | undefined;
+  public getCustomTemplate(): GtmCustomTemplate[];
+  public getCustomTemplate(name?: string): GtmCustomTemplate[] | GtmCustomTemplate | undefined {
     if (name) return this._customTemplates.find((template) => template.name === name);
     else return this._customTemplates;
   }
 
-  public setTag(name: string, data: any) {
+  public setContainer(data: GtmContainer) {
+    Object.assign(this._container, data);
+    return this.saveSoon();
+  }
+
+  public setFolder(name: string, data: GtmFolder) {
+    const folder = this.getFolder(name);
+    if (folder) {
+      Object.assign(folder, data);
+    } else {
+      const occupiedIds = this._folders.map((folder) => parseInt(folder.folderId));
+      data.folderId = occupiedIds.includes(parseInt(data.folderId))
+        ? (Math.max(...occupiedIds) + 1).toString()
+        : data.folderId;
+      this._folders.push(data);
+    }
+
+    return this.saveSoon();
+  }
+
+  public setTag(name: string, data: GtmTag) {
     const tag = this.getTag(null, name);
-    if (tag) Object.assign(tag, data);
-    else this._tags.push(data);
+    if (tag) {
+      Object.assign(tag, data);
+    } else {
+      const occupiedIds = this._tags.map((tag) => parseInt(tag.tagId));
+      data.tagId = occupiedIds.includes(parseInt(data.tagId)) ? (Math.max(...occupiedIds) + 1).toString() : data.tagId;
+      this._tags.push(data);
+    }
 
-    return this.save();
+    return this.saveSoon();
   }
 
-  public setTrigger(name: string, data: any) {
+  public setTrigger(name: string, data: GtmTrigger) {
     const trigger = this.getTrigger(null, name);
-    if (trigger) Object.assign(trigger, data);
-    else this._triggers.push(data);
+    if (trigger) {
+      Object.assign(trigger, data);
+    } else {
+      const occupiedIds = this._triggers.map((trigger) => parseInt(trigger.triggerId));
+      data.triggerId = occupiedIds.includes(parseInt(data.triggerId))
+        ? (Math.max(...occupiedIds) + 1).toString()
+        : data.triggerId;
+      this._triggers.push(data);
+    }
 
-    return this.save();
+    return this.saveSoon();
   }
 
-  public setVariable(name: string, data: any) {
+  public setVariable(name: string, data: GtmVariable) {
     const variable = this.getVariable(null, name);
-    if (variable) Object.assign(variable, data);
-    else this._variables.push(data);
+    if (variable) {
+      Object.assign(variable, data);
+    } else {
+      const occupiedIds = this._variables.map((variable) => parseInt(variable.variableId));
+      data.variableId = occupiedIds.includes(parseInt(data.variableId))
+        ? (Math.max(...occupiedIds) + 1).toString()
+        : data.variableId;
+      this._variables.push(data);
+    }
 
-    return this.save();
+    return this.saveSoon();
   }
 
-  public setBuiltInVariable(name: string, data: any) {
+  public setBuiltInVariable(name: string, data: GtmBuiltinVariable) {
     const variable = this.getBuiltInVariable(name);
     if (variable) Object.assign(variable, data);
     else this._builtInVariables.push(data);
 
-    return this.save();
+    return this.saveSoon();
   }
 
-  public setCustomTemplate(name: string, data: any) {
+  public setCustomTemplate(name: string, data: GtmCustomTemplate) {
     const template = this.getCustomTemplate(name);
     if (template) Object.assign(template, data);
     else this._customTemplates.push(data);
 
-    return this.save();
+    return this.saveSoon();
+  }
+
+  public deleteTag(name: string) {
+    const index = this._tags.findIndex((tag) => tag.name === name);
+    if (index !== -1) this._tags.splice(index, 1);
+
+    return this.saveSoon();
+  }
+
+  public deleteTrigger(name: string) {
+    const index = this._triggers.findIndex((trigger) => trigger.name === name);
+    if (index !== -1) this._triggers.splice(index, 1);
+
+    return this.saveSoon();
+  }
+
+  public deleteVariable(name: string) {
+    const index = this._variables.findIndex((variable) => variable.name === name);
+    if (index !== -1) this._variables.splice(index, 1);
+
+    return this.saveSoon();
+  }
+
+  public deleteBuiltInVariable(name: string) {
+    const index = this._builtInVariables.findIndex((variable) => variable.name === name);
+    if (index !== -1) this._builtInVariables.splice(index, 1);
+
+    return this.saveSoon();
+  }
+
+  public deleteCustomTemplate(name: string) {
+    const index = this._customTemplates.findIndex((template) => template.name === name);
+    if (index !== -1) this._customTemplates.splice(index, 1);
+
+    return this.saveSoon();
   }
 
   public setParentFolder(item: any, folder: string | null) {
-    item.parentFolderId = folder;
-    return this.save();
+    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+    item.parentFolderId = folderId;
+    return this.saveSoon();
   }
 
+  public setAccountId(accountId: string) {
+    this._data.containerVersion.accountId = accountId;
+  }
+
+  public setContainerId(containerId: string) {}
+
   private save() {
+    this.updateTime = new Date();
+
     const data = JSON.stringify(this._data, null, 2);
     return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
+  }
+
+  private saveSoon() {
+    if (this._saveSoonHandle) clearTimeout(this._saveSoonHandle);
+
+    this._saveSoonHandle = setTimeout(() => {
+      this.save();
+    }, 5);
   }
 }

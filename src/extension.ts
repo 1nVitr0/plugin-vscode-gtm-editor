@@ -1,7 +1,10 @@
-import { ExtensionContext, commands, workspace } from "vscode";
+import { ExtensionContext, workspace } from "vscode";
 import contributeCommands from "./contribute/commands";
+import { GtmFileSystemProvider } from "./providers/GtmFileSystemProvider";
+import contributeFileSystemProviders from "./contribute/file-system";
 
 export function activate(context: ExtensionContext) {
+  context.subscriptions.push(...contributeFileSystemProviders());
   context.subscriptions.push(...contributeCommands());
   context.subscriptions.push(
     workspace.onDidChangeConfiguration((change) => {
