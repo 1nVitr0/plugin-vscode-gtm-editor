@@ -8,6 +8,18 @@ import { GtmFolder } from "../types/gtm/GtmFolder";
 import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
 import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 
+/* eslint-disable @typescript-eslint/naming-convention */
+const markerToKey: { [k: string]: keyof GtmCustomTemplate["templateData"] } = {
+  ___TERMS_OF_SERVICE___: "tos",
+  ___INFO___: "info",
+  ___TEMPLATE_PARAMETERS___: "templateParameters",
+  ___SANDBOXED_JS_FOR_WEB_TEMPLATE___: "sandboxedJs",
+  ___WEB_PERMISSIONS___: "webPermissions",
+  ___TESTS___: "tests",
+  ___NOTES___: "notes",
+};
+/* eslint-enable @typescript-eslint/naming-convention */
+
 export class GtmExportContentProvider {
   public readonly exportTime: Date;
 
@@ -357,7 +369,17 @@ export class GtmExportContentProvider {
   private save() {
     this.updateTime = new Date();
 
-    const data = JSON.stringify(this._data, null, 2);
+    const data = JSON.stringify(
+      {
+        ...this._data,
+        containerVersion: {
+          ...this._data.containerVersion,
+          customTemplate: this._customTemplates.map(combineTemplate),
+        },
+      },
+      null,
+      2
+    );
     return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
   }
 
@@ -369,38 +391,17 @@ export class GtmExportContentProvider {
     }, 5);
   }
 }
+
 function parseTemplate(
   templateData: string
 ): GtmCustomTemplate["templateData"] {
   let current: keyof GtmCustomTemplate["templateData"] | undefined;
   return templateData.split("\n").reduce(
     (memo, value) => {
-      switch (value) {
-        case "___TERMS_OF_SERVICE___":
-          current = "tos";
-          break;
-        case "___INFO___":
-          current = "info";
-          break;
-        case "___TEMPLATE_PARAMETERS___":
-          current = "templateParameters";
-          break;
-        case "___SANDBOXED_JS_FOR_WEB_TEMPLATE___":
-          current = "sandboxedJs";
-          break;
-        case "___WEB_PERMISSIONS___":
-          current = "webPermissions";
-          break;
-        case "___TESTS___":
-          current = "tests";
-          break;
-        case "___NOTES___":
-          current = "notes";
-          break;
-        default:
-          if (current) memo[current] += `${value}\n`;
-          break;
-      }
+      const newKey = markerToKey[value];
+      current = newKey || current;
+
+      if (!newKey && current) memo[current] += `${value}\n`;
 
       return memo;
     },
@@ -414,4 +415,17 @@ function parseTemplate(
       notes: "",
     }
   );
+}
+
+function combineTemplate(customTemplate: GtmCustomTemplate) {
+  const invertedMap = Object.fromEntries(
+    Object.entries(markerToKey).map(([key, value]) => [value, key])
+  );
+
+  return {
+    ...customTemplate,
+    templateData: Object.entries(customTemplate.templateData)
+      .map(([key, value]) => `${invertedMap[key]}\n${value}`)
+      .join("\n"),
+  };
 }

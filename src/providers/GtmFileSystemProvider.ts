@@ -31,7 +31,7 @@ const keyToFileType: {
   templateParameters: "json",
   sandboxedJs: "js",
   webPermissions: "json",
-  tests: "txt",
+  tests: "yml",
   notes: "txt",
 };
 
@@ -328,12 +328,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
           JSON.stringify(content.getBuiltInVariable(itemName), null, 2)
         );
       case "customTemplates":
-        const stuff = subsection?.replace(/\.\w+$/, "");
-        if (!stuff) throw FileSystemError.FileNotFound(uri);
+        if (!subsection) throw FileSystemError.FileNotFound(uri);
 
         return Buffer.from(
           // @ts-expect-error go away
-          content.getCustomTemplate(itemName)?.templateData[stuff]
+          content.getCustomTemplate(itemName)?.templateData[subsection]
         );
       default:
         throw FileSystemError.FileNotFound(uri);
@@ -363,16 +362,32 @@ export class GtmFileSystemProvider implements FileSystemProvider {
       containerId,
       itemType,
       itemName,
+      subsection,
     } = path;
 
     if (original && !overwrite) throw FileSystemError.FileExists(uri);
     if (!accountId || !containerId || !itemType || !itemName)
       throw FileSystemError.Unavailable(uri);
 
-    const item = JSON.parse(data.toString()) as GtmPropertyWithFolder;
-    const originalItem = original
-      ? (JSON.parse(original.toString()) as GtmPropertyWithFolder)
-      : null;
+    let item: GtmPropertyWithFolder;
+    let originalItem: GtmPropertyWithFolder | null;
+
+    if (itemType === "customTemplates" && subsection) {
+      originalItem = content.getCustomTemplate(itemName) || null;
+      item = {
+        ...originalItem,
+        templateData: {
+          // @ts-expect-error go away
+          ...originalItem?.templateData,
+          [subsection]: data.toString(),
+        },
+      } as GtmPropertyWithFolder;
+    } else {
+      item = JSON.parse(data.toString()) as GtmPropertyWithFolder;
+      originalItem = original
+        ? (JSON.parse(original.toString()) as GtmPropertyWithFolder)
+        : null;
+    }
     const event = {
       type: create ? FileChangeType.Created : FileChangeType.Changed,
       uri,
@@ -618,7 +633,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (accountId) result.accountId = accountId;
     if (containers) result.containers = true;
     if (containerId) result.containerId = containerId;
-    if (id) result.subsection = id;
+    if (id) result.subsection = id.replace(/\.\w+$/, "");
 
     if (folderOrItemType) {
       const folders = content.getFolder();
