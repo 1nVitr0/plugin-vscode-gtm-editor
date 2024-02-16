@@ -8,6 +8,18 @@ import { GtmFolder } from "../types/gtm/GtmFolder";
 import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
 import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 
+/* eslint-disable @typescript-eslint/naming-convention */
+const markerToKey: { [k: string]: keyof GtmCustomTemplate["templateData"] } = {
+  ___TERMS_OF_SERVICE___: "tos",
+  ___INFO___: "info",
+  ___TEMPLATE_PARAMETERS___: "templateParameters",
+  ___SANDBOXED_JS_FOR_WEB_TEMPLATE___: "sandboxedJs",
+  ___WEB_PERMISSIONS___: "webPermissions",
+  ___TESTS___: "tests",
+  ___NOTES___: "notes",
+};
+/* eslint-enable @typescript-eslint/naming-convention */
+
 export class GtmExportContentProvider {
   public readonly exportTime: Date;
 
@@ -54,7 +66,15 @@ export class GtmExportContentProvider {
 
     const {
       exportTime,
-      containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
+      containerVersion: {
+        container,
+        tag,
+        trigger,
+        variable,
+        folder,
+        builtInVariable,
+        customTemplate,
+      },
     } = this._data;
 
     this.exportTime = new Date(exportTime);
@@ -65,7 +85,15 @@ export class GtmExportContentProvider {
     this._variables = variable;
     this._folders = folder;
     this._builtInVariables = builtInVariable;
-    this._customTemplates = customTemplate;
+    this._customTemplates = customTemplate.map(({ templateData, ...rest }) => {
+      // @ts-expect-error type confusion between stored data type and representation type
+      const parsedTemplate = parseTemplate(templateData);
+
+      return {
+        ...rest,
+        templateData: parsedTemplate,
+      };
+    });
   }
 
   public async reload() {
@@ -73,7 +101,15 @@ export class GtmExportContentProvider {
     this._data = JSON.parse(data.toString());
 
     const {
-      containerVersion: { container, tag, trigger, variable, folder, builtInVariable, customTemplate },
+      containerVersion: {
+        container,
+        tag,
+        trigger,
+        variable,
+        folder,
+        builtInVariable,
+        customTemplate,
+      },
     } = this._data;
 
     this._container = container;
@@ -82,7 +118,15 @@ export class GtmExportContentProvider {
     this._variables = variable;
     this._folders = folder;
     this._builtInVariables = builtInVariable;
-    this._customTemplates = customTemplate;
+    this._customTemplates = customTemplate.map(({ templateData, ...rest }) => {
+      // @ts-expect-error type confusion between stored data type and representation type
+      const parsedTemplate = parseTemplate(templateData);
+
+      return {
+        ...rest,
+        templateData: parsedTemplate,
+      };
+    });
   }
 
   public getContainer(): GtmContainer {
@@ -96,20 +140,38 @@ export class GtmExportContentProvider {
     else return this._folders;
   }
 
-  public getTag(folder: string | undefined | null, name: string): GtmTag | undefined;
+  public getTag(
+    folder: string | undefined | null,
+    name: string
+  ): GtmTag | undefined;
   public getTag(folder?: string | null): GtmTag[];
-  public getTag(folder?: string | null, name?: string): GtmTag[] | GtmTag | undefined {
-    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
-    const tags = folderId ? this._tags.filter((tag) => tag.parentFolderId === folderId) : this._tags;
+  public getTag(
+    folder?: string | null,
+    name?: string
+  ): GtmTag[] | GtmTag | undefined {
+    const folderId = folder
+      ? this._folders.find((f) => f.name === folder)?.folderId
+      : null;
+    const tags = folderId
+      ? this._tags.filter((tag) => tag.parentFolderId === folderId)
+      : this._tags;
 
     if (name) return tags.find((tag) => tag.name === name);
     else return tags;
   }
 
-  public getTrigger(folder: string | undefined | null, name: string): GtmTrigger | undefined;
+  public getTrigger(
+    folder: string | undefined | null,
+    name: string
+  ): GtmTrigger | undefined;
   public getTrigger(folder?: string | null): GtmTrigger[];
-  public getTrigger(folder?: string | null, name?: string): GtmTrigger[] | GtmTrigger | undefined {
-    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+  public getTrigger(
+    folder?: string | null,
+    name?: string
+  ): GtmTrigger[] | GtmTrigger | undefined {
+    const folderId = folder
+      ? this._folders.find((f) => f.name === folder)?.folderId
+      : null;
     const triggers = folderId
       ? this._triggers.filter((trigger) => trigger.parentFolderId === folderId)
       : this._triggers;
@@ -118,12 +180,22 @@ export class GtmExportContentProvider {
     else return triggers;
   }
 
-  public getVariable(folder: string | undefined | null, name: string): GtmVariable | undefined;
+  public getVariable(
+    folder: string | undefined | null,
+    name: string
+  ): GtmVariable | undefined;
   public getVariable(folder?: string | null): GtmVariable[];
-  public getVariable(folder?: string | null, name?: string): GtmVariable[] | GtmVariable | undefined {
-    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+  public getVariable(
+    folder?: string | null,
+    name?: string
+  ): GtmVariable[] | GtmVariable | undefined {
+    const folderId = folder
+      ? this._folders.find((f) => f.name === folder)?.folderId
+      : null;
     const variables = folderId
-      ? this._variables.filter((variable) => variable.parentFolderId === folderId)
+      ? this._variables.filter(
+          (variable) => variable.parentFolderId === folderId
+        )
       : this._variables;
 
     if (name) return variables.find((variable) => variable.name === name);
@@ -132,15 +204,21 @@ export class GtmExportContentProvider {
 
   public getBuiltInVariable(name: string): GtmBuiltInVariable | undefined;
   public getBuiltInVariable(): GtmBuiltInVariable[];
-  public getBuiltInVariable(name?: string): GtmBuiltInVariable[] | GtmBuiltInVariable | undefined {
-    if (name) return this._builtInVariables.find((variable) => variable.name === name);
+  public getBuiltInVariable(
+    name?: string
+  ): GtmBuiltInVariable[] | GtmBuiltInVariable | undefined {
+    if (name)
+      return this._builtInVariables.find((variable) => variable.name === name);
     else return this._builtInVariables;
   }
 
   public getCustomTemplate(name: string): GtmCustomTemplate | undefined;
   public getCustomTemplate(): GtmCustomTemplate[];
-  public getCustomTemplate(name?: string): GtmCustomTemplate[] | GtmCustomTemplate | undefined {
-    if (name) return this._customTemplates.find((template) => template.name === name);
+  public getCustomTemplate(
+    name?: string
+  ): GtmCustomTemplate[] | GtmCustomTemplate | undefined {
+    if (name)
+      return this._customTemplates.find((template) => template.name === name);
     else return this._customTemplates;
   }
 
@@ -154,7 +232,9 @@ export class GtmExportContentProvider {
     if (folder) {
       Object.assign(folder, data);
     } else {
-      const occupiedIds = this._folders.map((folder) => parseInt(folder.folderId));
+      const occupiedIds = this._folders.map((folder) =>
+        parseInt(folder.folderId)
+      );
       data.folderId = occupiedIds.includes(parseInt(data.folderId))
         ? ((Math.max(...occupiedIds) + 1).toString() as `${number}`)
         : data.folderId;
@@ -184,7 +264,9 @@ export class GtmExportContentProvider {
     if (trigger) {
       Object.assign(trigger, data);
     } else {
-      const occupiedIds = this._triggers.map((trigger) => parseInt(trigger.triggerId));
+      const occupiedIds = this._triggers.map((trigger) =>
+        parseInt(trigger.triggerId)
+      );
       data.triggerId = occupiedIds.includes(parseInt(data.triggerId))
         ? ((Math.max(...occupiedIds) + 1).toString() as `${number}`)
         : data.triggerId;
@@ -199,7 +281,9 @@ export class GtmExportContentProvider {
     if (variable) {
       Object.assign(variable, data);
     } else {
-      const occupiedIds = this._variables.map((variable) => parseInt(variable.variableId));
+      const occupiedIds = this._variables.map((variable) =>
+        parseInt(variable.variableId)
+      );
       data.variableId = occupiedIds.includes(parseInt(data.variableId))
         ? (Math.max(...occupiedIds) + 1).toString()
         : data.variableId;
@@ -240,28 +324,36 @@ export class GtmExportContentProvider {
   }
 
   public deleteVariable(name: string) {
-    const index = this._variables.findIndex((variable) => variable.name === name);
+    const index = this._variables.findIndex(
+      (variable) => variable.name === name
+    );
     if (index !== -1) this._variables.splice(index, 1);
 
     return this.saveSoon();
   }
 
   public deleteBuiltInVariable(name: string) {
-    const index = this._builtInVariables.findIndex((variable) => variable.name === name);
+    const index = this._builtInVariables.findIndex(
+      (variable) => variable.name === name
+    );
     if (index !== -1) this._builtInVariables.splice(index, 1);
 
     return this.saveSoon();
   }
 
   public deleteCustomTemplate(name: string) {
-    const index = this._customTemplates.findIndex((template) => template.name === name);
+    const index = this._customTemplates.findIndex(
+      (template) => template.name === name
+    );
     if (index !== -1) this._customTemplates.splice(index, 1);
 
     return this.saveSoon();
   }
 
   public setParentFolder(item: any, folder: string | null) {
-    const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
+    const folderId = folder
+      ? this._folders.find((f) => f.name === folder)?.folderId
+      : null;
     item.parentFolderId = folderId;
     return this.saveSoon();
   }
@@ -277,7 +369,17 @@ export class GtmExportContentProvider {
   private save() {
     this.updateTime = new Date();
 
-    const data = JSON.stringify(this._data, null, 2);
+    const data = JSON.stringify(
+      {
+        ...this._data,
+        containerVersion: {
+          ...this._data.containerVersion,
+          customTemplate: this._customTemplates.map(combineTemplate),
+        },
+      },
+      null,
+      2
+    );
     return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
   }
 
@@ -288,4 +390,42 @@ export class GtmExportContentProvider {
       this.save();
     }, 5);
   }
+}
+
+function parseTemplate(
+  templateData: string
+): GtmCustomTemplate["templateData"] {
+  let current: keyof GtmCustomTemplate["templateData"] | undefined;
+  return templateData.split("\n").reduce(
+    (memo, value) => {
+      const newKey = markerToKey[value];
+      current = newKey || current;
+
+      if (!newKey && current) memo[current] += `${value}\n`;
+
+      return memo;
+    },
+    {
+      tos: "",
+      info: "",
+      templateParameters: "",
+      sandboxedJs: "",
+      webPermissions: "",
+      tests: "",
+      notes: "",
+    }
+  );
+}
+
+function combineTemplate(customTemplate: GtmCustomTemplate) {
+  const invertedMap = Object.fromEntries(
+    Object.entries(markerToKey).map(([key, value]) => [value, key])
+  );
+
+  return {
+    ...customTemplate,
+    templateData: Object.entries(customTemplate.templateData)
+      .map(([key, value]) => `${invertedMap[key]}\n${value}`)
+      .join("\n"),
+  };
 }
