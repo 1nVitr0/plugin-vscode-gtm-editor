@@ -23,10 +23,25 @@ import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
 import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
 import { GtmContainer } from "../types/gtm/GtmContainer";
 
+const keyToFileType: {
+  [k in keyof GtmCustomTemplate["templateData"]]: string;
+} = {
+  tos: "txt",
+  info: "json",
+  templateParameters: "json",
+  sandboxedJs: "js",
+  webPermissions: "json",
+  tests: "yml",
+  notes: "txt",
+};
+
 export class GtmFileSystemProvider implements FileSystemProvider {
   public static scheme = "gtm";
 
-  private _contentProviders: Map<string, GtmExportContentProvider | Promise<GtmExportContentProvider>> = new Map();
+  private _contentProviders: Map<
+    string,
+    GtmExportContentProvider | Promise<GtmExportContentProvider>
+  > = new Map();
   private _emitter = new EventEmitter<FileChangeEvent[]>();
   private _bufferedEvents: FileChangeEvent[] = [];
   private _fireSoonHandle?: NodeJS.Timer;
@@ -36,9 +51,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   static async openSource(sourceUri: Uri) {
     try {
       const stat = await workspace.fs.stat(sourceUri);
-      if (stat.type === FileType.Directory) throw FileSystemError.FileIsADirectory(sourceUri);
+      if (stat.type === FileType.Directory)
+        throw FileSystemError.FileIsADirectory(sourceUri);
     } catch (error) {
-      if (error instanceof FileSystemError) window.showErrorMessage(error.message);
+      if (error instanceof FileSystemError)
+        window.showErrorMessage(error.message);
       throw error;
     }
 
@@ -91,24 +108,32 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     const rootUri = GtmFileSystemProvider.buildPath({ sourceUri });
     const sourceKey = sourceUri.toString();
 
-    if (this._contentProviders.has(sourceKey)) return await this._contentProviders.get(sourceKey)!;
+    if (this._contentProviders.has(sourceKey))
+      return await this._contentProviders.get(sourceKey)!;
 
-    const providerPromise = new Promise<GtmExportContentProvider>(async (resolve, reject) => {
-      try {
-        const stat = await workspace.fs.stat(sourceUri);
-        if (stat.type === FileType.Directory) throw FileSystemError.FileIsADirectory(sourceUri);
-      } catch (error) {
-        if (error instanceof FileSystemError) window.showErrorMessage(error.message);
-        return reject(error);
+    const providerPromise = new Promise<GtmExportContentProvider>(
+      async (resolve, reject) => {
+        try {
+          const stat = await workspace.fs.stat(sourceUri);
+          if (stat.type === FileType.Directory)
+            throw FileSystemError.FileIsADirectory(sourceUri);
+        } catch (error) {
+          if (error instanceof FileSystemError)
+            window.showErrorMessage(error.message);
+          return reject(error);
+        }
+
+        const content = await workspace.fs.readFile(sourceUri);
+        const contentProvider = new GtmExportContentProvider(
+          sourceUri,
+          content.toString()
+        );
+        this._contentProviders.set(sourceKey, contentProvider);
+        this._fireSoon({ type: FileChangeType.Created, uri: rootUri });
+
+        resolve(contentProvider);
       }
-
-      const content = await workspace.fs.readFile(sourceUri);
-      const contentProvider = new GtmExportContentProvider(sourceUri, content.toString());
-      this._contentProviders.set(sourceKey, contentProvider);
-      this._fireSoon({ type: FileChangeType.Created, uri: rootUri });
-
-      resolve(contentProvider);
-    });
+    );
 
     this._contentProviders.set(sourceKey, providerPromise);
     const contentProvider = await providerPromise;
@@ -124,20 +149,35 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     return contentProvider;
   }
 
-  watch(uri: Uri, options: { readonly recursive: boolean; readonly excludes: readonly string[] }): Disposable {
+  watch(
+    uri: Uri,
+    options: {
+      readonly recursive: boolean;
+      readonly excludes: readonly string[];
+    }
+  ): Disposable {
     // ignore, fires for all changes...
     return new Disposable(() => {});
   }
 
   async stat(uri: Uri): Promise<FileStat> {
     const content = await this.load(uri);
-    const { accountId, containerId, folder, itemType, itemName } = await this.resolvePath(uri);
+    const { accountId, containerId, folder, itemType, itemName, subsection } =
+      await this.resolvePath(uri);
 
     const ctime = content.exportTime.getTime();
     const mtime = content.updateTime.getTime();
 
-    if (accountId && accountId !== content.accountId) throw FileSystemError.FileNotFound(uri);
-    if (containerId && containerId !== content.containerId) throw FileSystemError.FileNotFound(uri);
+    if (accountId && accountId !== content.accountId)
+      throw FileSystemError.FileNotFound(uri);
+    if (containerId && containerId !== content.containerId)
+      throw FileSystemError.FileNotFound(uri);
+
+    if (itemType === "customTemplates") {
+      if (subsection) return { type: FileType.File, ctime, mtime, size: 0 };
+
+      return { type: FileType.Directory, ctime, mtime, size: 0 };
+    }
 
     if (itemName) {
       const data =
@@ -172,8 +212,21 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
   async readDirectory(uri: Uri): Promise<[string, FileType][]> {
     const content = await this.load(uri);
-    const { accountId, containerId, folder, itemType, accounts, containers, itemName } = await this.resolvePath(uri);
-
+    const {
+      accountId,
+      containerId,
+      folder,
+      itemType,
+      accounts,
+      containers,
+      itemName,
+    } = await this.resolvePath(uri);
+    if (itemType === "customTemplates" && itemName) {
+      return Object.keys(content.getCustomTemplate(itemName)!.templateData).map(
+        // @ts-expect-error go away
+        (key) => [`${key}.${keyToFileType[key]}`, FileType.File]
+      );
+    }
     if (itemName) throw FileSystemError.FileNotADirectory(uri);
     if (!accounts) return [["accounts", FileType.Directory]];
     if (!accountId) return [[content.accountId, FileType.Directory]];
@@ -183,19 +236,31 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (itemType) {
       switch (itemType) {
         case "folders":
-          return content.getFolder().map((t) => [`${t.name}.json`, FileType.File]);
+          return content
+            .getFolder()
+            .map((t) => [`${t.name}.json`, FileType.File]);
         case "container":
           return [[`${content.getContainer().name}.json`, FileType.File]];
         case "tags":
-          return content.getTag(folder).map((t) => [`${t.name}.json`, FileType.File]);
+          return content
+            .getTag(folder)
+            .map((t) => [`${t.name}.json`, FileType.File]);
         case "triggers":
-          return content.getTrigger(folder).map((t) => [`${t.name}.json`, FileType.File]);
+          return content
+            .getTrigger(folder)
+            .map((t) => [`${t.name}.json`, FileType.File]);
         case "variables":
-          return content.getVariable(folder).map((t) => [`${t.name}.json`, FileType.File]);
+          return content
+            .getVariable(folder)
+            .map((t) => [`${t.name}.json`, FileType.File]);
         case "builtInVariables":
-          return content.getBuiltInVariable().map((t) => [`${t.name}.json`, FileType.File]);
+          return content
+            .getBuiltInVariable()
+            .map((t) => [`${t.name}.json`, FileType.File]);
         case "customTemplates":
-          return content.getCustomTemplate().map((t) => [`${t.name}.json`, FileType.File]);
+          return content
+            .getCustomTemplate()
+            .map((t) => [t.name, FileType.Directory]);
         default:
           return [];
       }
@@ -207,7 +272,9 @@ export class GtmFileSystemProvider implements FileSystemProvider {
       ];
     } else {
       return [
-        ...content.getFolder().map((t): [string, FileType] => [t.name, FileType.Directory]),
+        ...content
+          .getFolder()
+          .map((t): [string, FileType] => [t.name, FileType.Directory]),
         ["_container", FileType.Directory],
         ["_folders", FileType.Directory],
         ["_tags", FileType.Directory],
@@ -226,28 +293,47 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   async readFile(uri: Uri): Promise<Uint8Array> {
     const content = await this.load(uri);
     const stat = await this.stat(uri); // Will throw error if it doesn't exist
-    const { accountId, containerId, folder, itemType, itemName } = await this.resolvePath(uri);
+    const { accountId, containerId, folder, itemType, itemName, subsection } =
+      await this.resolvePath(uri);
 
-    if (stat.type === FileType.Directory) throw FileSystemError.FileIsADirectory(uri);
-    if (!accountId || !containerId || !itemType || !itemName) throw FileSystemError.FileNotFound(uri);
+    if (stat.type === FileType.Directory)
+      throw FileSystemError.FileIsADirectory(uri);
+    if (!accountId || !containerId || !itemType || !itemName)
+      throw FileSystemError.FileNotFound(uri);
 
     switch (itemType) {
       case "folders":
-        return Buffer.from(JSON.stringify(content.getFolder(itemName), null, 2));
+        return Buffer.from(
+          JSON.stringify(content.getFolder(itemName), null, 2)
+        );
       case "container":
         const container = content.getContainer();
-        if (itemName !== container.name) throw FileSystemError.FileNotFound(uri);
+        if (itemName !== container.name)
+          throw FileSystemError.FileNotFound(uri);
         return Buffer.from(JSON.stringify(container, null, 2));
       case "tags":
-        return Buffer.from(JSON.stringify(content.getTag(folder, itemName), null, 2));
+        return Buffer.from(
+          JSON.stringify(content.getTag(folder, itemName), null, 2)
+        );
       case "triggers":
-        return Buffer.from(JSON.stringify(content.getTrigger(folder, itemName), null, 2));
+        return Buffer.from(
+          JSON.stringify(content.getTrigger(folder, itemName), null, 2)
+        );
       case "variables":
-        return Buffer.from(JSON.stringify(content.getVariable(folder, itemName), null, 2));
+        return Buffer.from(
+          JSON.stringify(content.getVariable(folder, itemName), null, 2)
+        );
       case "builtInVariables":
-        return Buffer.from(JSON.stringify(content.getBuiltInVariable(itemName), null, 2));
+        return Buffer.from(
+          JSON.stringify(content.getBuiltInVariable(itemName), null, 2)
+        );
       case "customTemplates":
-        return Buffer.from(JSON.stringify(content.getCustomTemplate(itemName), null, 2));
+        if (!subsection) throw FileSystemError.FileNotFound(uri);
+
+        return Buffer.from(
+          // @ts-expect-error go away
+          content.getCustomTemplate(itemName)?.templateData[subsection]
+        );
       default:
         throw FileSystemError.FileNotFound(uri);
     }
@@ -256,41 +342,93 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   async writeFile(
     uri: Uri,
     data: Uint8Array,
-    { create, overwrite }: { readonly create: boolean; readonly overwrite: boolean }
+    {
+      create,
+      overwrite,
+    }: { readonly create: boolean; readonly overwrite: boolean }
   ): Promise<void> {
     const content = await this.load(uri);
     const original = await this.readFile(uri).catch((e) => {
-      if (e instanceof FileSystemError && e.code === "FileNotFound") return null;
+      if (e instanceof FileSystemError && e.code === "FileNotFound")
+        return null;
       else throw e;
     });
     const path = await this.resolvePath(uri);
-    const { sourceUri, accounts, accountId, containers, containerId, itemType, itemName } = path;
+    const {
+      sourceUri,
+      accounts,
+      accountId,
+      containers,
+      containerId,
+      itemType,
+      itemName,
+      subsection,
+    } = path;
 
     if (original && !overwrite) throw FileSystemError.FileExists(uri);
-    if (!accountId || !containerId || !itemType || !itemName) throw FileSystemError.Unavailable(uri);
+    if (!accountId || !containerId || !itemType || !itemName)
+      throw FileSystemError.Unavailable(uri);
 
-    const item = JSON.parse(data.toString()) as GtmPropertyWithFolder;
-    const originalItem = original ? (JSON.parse(original.toString()) as GtmPropertyWithFolder) : null;
-    const event = { type: create ? FileChangeType.Created : FileChangeType.Changed, uri };
+    let item: GtmPropertyWithFolder;
+    let originalItem: GtmPropertyWithFolder | null;
 
-    if (originalItem && (item.accountId !== originalItem.accountId || item.containerId !== originalItem.containerId)) {
-      window.showErrorMessage(`Cannot change account or container ID on a ${itemType ?? "file"} basis`);
+    if (itemType === "customTemplates" && subsection) {
+      originalItem = content.getCustomTemplate(itemName) || null;
+      item = {
+        ...originalItem,
+        templateData: {
+          // @ts-expect-error go away
+          ...originalItem?.templateData,
+          [subsection]: data.toString(),
+        },
+      } as GtmPropertyWithFolder;
+    } else {
+      item = JSON.parse(data.toString()) as GtmPropertyWithFolder;
+      originalItem = original
+        ? (JSON.parse(original.toString()) as GtmPropertyWithFolder)
+        : null;
+    }
+    const event = {
+      type: create ? FileChangeType.Created : FileChangeType.Changed,
+      uri,
+    };
+
+    if (
+      originalItem &&
+      (item.accountId !== originalItem.accountId ||
+        item.containerId !== originalItem.containerId)
+    ) {
+      window.showErrorMessage(
+        `Cannot change account or container ID on a ${itemType ?? "file"} basis`
+      );
       throw FileSystemError.Unavailable(uri);
     }
 
     switch (itemType) {
       case "folders":
         if (originalItem && originalItem.name !== item.name) {
-          const baseFolderEvent = { sourceUri, accountId, accounts, containerId, containers };
+          const baseFolderEvent = {
+            sourceUri,
+            accountId,
+            accounts,
+            containerId,
+            containers,
+          };
           this._fireSoon(
             event,
             {
               type: FileChangeType.Deleted,
-              uri: GtmFileSystemProvider.buildPath({ ...baseFolderEvent, folder: originalItem.name }),
+              uri: GtmFileSystemProvider.buildPath({
+                ...baseFolderEvent,
+                folder: originalItem.name,
+              }),
             },
             {
               type: FileChangeType.Created,
-              uri: GtmFileSystemProvider.buildPath({ ...baseFolderEvent, folder: item.name }),
+              uri: GtmFileSystemProvider.buildPath({
+                ...baseFolderEvent,
+                folder: item.name,
+              }),
             }
           );
         }
@@ -327,23 +465,44 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
 
     // If path must be change, trigger rename
-    if (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name) {
-      const folder = content.getFolder().find((f) => f.folderId === item.parentFolderId)?.name;
+    if (
+      item.parentFolderId !== originalItem?.parentFolderId ||
+      item.name !== originalItem?.name
+    ) {
+      const folder = content
+        .getFolder()
+        .find((f) => f.folderId === item.parentFolderId)?.name;
       const itemName = item.name.replace(".json", "");
-      await this.rename(uri, GtmFileSystemProvider.buildPath({ ...path, folder, itemName }), { overwrite: false });
+      await this.rename(
+        uri,
+        GtmFileSystemProvider.buildPath({ ...path, folder, itemName }),
+        { overwrite: false }
+      );
     }
   }
 
-  async delete(uri: Uri, { recursive }: { readonly recursive: boolean }): Promise<void> {
+  async delete(
+    uri: Uri,
+    { recursive }: { readonly recursive: boolean }
+  ): Promise<void> {
     const content = await this.load(uri);
     const event = { type: FileChangeType.Deleted, uri };
-    const { accounts, accountId, containers, containerId, folder, itemType, itemName } = await this.resolvePath(uri);
+    const {
+      accounts,
+      accountId,
+      containers,
+      containerId,
+      folder,
+      itemType,
+      itemName,
+    } = await this.resolvePath(uri);
 
     // Will throw Error if file doesn't exist
     await this.stat(uri);
 
     // Cannot delete root directories
-    if (!accounts || !accountId || !containers || !containerId) throw FileSystemError.NoPermissions(uri);
+    if (!accounts || !accountId || !containers || !containerId)
+      throw FileSystemError.NoPermissions(uri);
 
     // Cannot delete itemType directories
     if (itemType && !itemName) throw FileSystemError.NoPermissions(uri);
@@ -355,7 +514,9 @@ export class GtmFileSystemProvider implements FileSystemProvider {
       content.getTag(folder).map((t) => content.deleteTag(t.name));
       content.getTrigger(folder).map((t) => content.deleteTrigger(t.name));
       content.getVariable(folder).map((t) => content.deleteVariable(t.name));
-      content.getBuiltInVariable().map((t) => content.deleteBuiltInVariable(t.name));
+      content
+        .getBuiltInVariable()
+        .map((t) => content.deleteBuiltInVariable(t.name));
     }
 
     // Should not be possible, but kept for type safety
@@ -386,10 +547,19 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async rename(oldUri: Uri, newUri: Uri, { overwrite }: { readonly overwrite: boolean }): Promise<void> {
+  async rename(
+    oldUri: Uri,
+    newUri: Uri,
+    { overwrite }: { readonly overwrite: boolean }
+  ): Promise<void> {
     const content = await this.load(oldUri);
-    const { itemType: oldItemType, itemName: oldItemName } = await this.resolvePath(oldUri);
-    const { folder: newFolder, itemType: newItemType, itemName: newItemName } = await this.resolvePath(newUri);
+    const { itemType: oldItemType, itemName: oldItemName } =
+      await this.resolvePath(oldUri);
+    const {
+      folder: newFolder,
+      itemType: newItemType,
+      itemName: newItemName,
+    } = await this.resolvePath(newUri);
     const events = [
       { type: FileChangeType.Deleted, uri: oldUri },
       { type: FileChangeType.Created, uri: newUri },
@@ -399,7 +569,8 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
     if (oldItemType !== newItemType) throw FileSystemError.Unavailable(newUri);
     if (!oldItemName || !newItemName) throw FileSystemError.Unavailable(newUri);
-    if (!overwrite && (await this.exists(newUri))) throw FileSystemError.FileExists(newUri);
+    if (!overwrite && (await this.exists(newUri)))
+      throw FileSystemError.FileExists(newUri);
 
     const item = JSON.parse((await this.readFile(oldUri)).toString()); // Will throw Error if file doesn't exist
     if (newFolder) item.parentFolderId = content.getFolder(newFolder)?.folderId;
@@ -408,7 +579,10 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
     switch (oldItemType) {
       case "folders":
-        return this.writeFile(oldUri, Buffer.from(JSON.stringify(item)), { create: false, overwrite: true });
+        return this.writeFile(oldUri, Buffer.from(JSON.stringify(item)), {
+          create: false,
+          overwrite: true,
+        });
       case "container":
         content.setContainer(item);
         return this._fireSoon(...events);
@@ -433,26 +607,45 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   }
 
   private async resolvePath(uri: Uri): Promise<GtmPath> {
-    // gtm:/accounts/[accountId]/containers/[containerId]/[folder?]/[itemType?]/[itemName?]#[sourceUri]
+    // gtm:/accounts/[accountId]/containers/[containerId]/[folder?]/[itemType?]/[itemName?]/[subsection?]#[sourceUri]
     const content = await this.load(uri);
     const { fragment, path } = uri;
-    const [, accounts, accountId, containers, containerId, folderOrItemType, itemTypeOrId, id] = path.split("/");
-    const result: GtmPath = { sourceUri: GtmFileSystemProvider.decodeAuthorityUri(fragment) };
+    const [
+      ,
+      accounts,
+      accountId,
+      containers,
+      containerId,
+      folderOrItemType,
+      itemTypeOrId,
+      id,
+    ] = path.split("/");
+    const result: GtmPath = {
+      sourceUri: GtmFileSystemProvider.decodeAuthorityUri(fragment),
+    };
 
-    if (accounts && accounts !== "accounts") throw FileSystemError.FileNotFound(uri);
-    if (containers && containers !== "containers") throw FileSystemError.FileNotFound(uri);
+    if (accounts && accounts !== "accounts")
+      throw FileSystemError.FileNotFound(uri);
+    if (containers && containers !== "containers")
+      throw FileSystemError.FileNotFound(uri);
 
     if (accounts) result.accounts = true;
     if (accountId) result.accountId = accountId;
     if (containers) result.containers = true;
     if (containerId) result.containerId = containerId;
+    if (id) result.subsection = id.replace(/\.\w+$/, "");
 
     if (folderOrItemType) {
       const folders = content.getFolder();
 
       result.folder = folders.find((f) => f.name === folderOrItemType)?.name;
-      result.itemType = (result.folder ? itemTypeOrId : folderOrItemType)?.replace("_", "") as GtmPath["itemType"];
-      result.itemName = (result.folder ? id : itemTypeOrId)?.replace(".json", "");
+      result.itemType = (
+        result.folder ? itemTypeOrId : folderOrItemType
+      )?.replace("_", "") as GtmPath["itemType"];
+      result.itemName = (result.folder ? id : itemTypeOrId)?.replace(
+        ".json",
+        ""
+      );
     }
 
     return result;
