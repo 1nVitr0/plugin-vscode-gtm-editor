@@ -102,8 +102,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         return reject(error);
       }
 
-      const content = await workspace.fs.readFile(sourceUri);
-      const contentProvider = new GtmExportContentProvider(sourceUri, content.toString());
+      const contentProvider = await GtmExportContentProvider.create(sourceUri);
       this._contentProviders.set(sourceKey, contentProvider);
       this._fireSoon({ type: FileChangeType.Created, uri: rootUri });
 

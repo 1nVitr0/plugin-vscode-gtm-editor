@@ -49,6 +49,11 @@ export class GtmExportContentProvider {
     this._data.exportTime = value.toISOString();
   }
 
+  public static async create(uri: Uri) {
+    const data = await workspace.fs.readFile(uri);
+    return new GtmExportContentProvider(uri, data.toString());
+  }
+
   constructor(private gtmExportUri: Uri, initialContent: string) {
     this._data = JSON.parse(initialContent.toString());
 
