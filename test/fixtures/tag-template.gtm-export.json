@@ -1,0 +1,156 @@
+{
+    "exportFormatVersion": 2,
+    "exportTime": "2024-01-18 12:27:33",
+    "containerVersion": {
+        "path": "accounts/1164259306/containers/6905227/versions/0",
+        "accountId": "1164259306",
+        "containerId": "6905227",
+        "containerVersionId": "0",
+        "container": {
+            "path": "accounts/1164259306/containers/6905227",
+            "accountId": "1164259306",
+            "containerId": "6905227",
+            "name": "Trigger after 3rd Page View Recipe",
+            "publicId": "GTM-KG6CFKT",
+            "usageContext": [
+                "WEB"
+            ],
+            "fingerprint": "1494966679697",
+            "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/1164259306/containers/6905227/workspaces?apiLink=container",
+            "features": {
+                "supportUserPermissions": true,
+                "supportEnvironments": true,
+                "supportWorkspaces": true,
+                "supportGtagConfigs": false,
+                "supportBuiltInVariables": true,
+                "supportClients": false,
+                "supportFolders": true,
+                "supportTags": true,
+                "supportTemplates": true,
+                "supportTriggers": true,
+                "supportVariables": true,
+                "supportVersions": true,
+                "supportZones": true,
+                "supportTransformations": false
+            },
+            "tagIds": [
+                "GTM-KG6CFKT"
+            ]
+        },
+        "tag": [
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "tagId": "1",
+                "name": "cHTML - Set Cookie - Pageview Counter",
+                "type": "html",
+                "parameter": [
+                    {
+                        "type": "TEMPLATE",
+                        "key": "html",
+                        "value": "<script>function gtm_setCookie(name, value, expires) {\n    var cookie = name + \"=\" + value + \"; path=/; domain=.\" + location.hostname.replace(/^www\\./i, \"\");\n\n    if (typeof expires !== \"undefined\") {\n        var now = new Date();\n        now.setTime(now.getTime() + expires * 24 * 60 * 60 * 1000);\n        cookie += \"; expires=\" + now.toUTCString();\n    }\n\n    document.cookie = cookie;\n}\n\nfunction gtm_getCookie(name) {\n    var cookies = document.cookie.split(\";\"),\n        toReturn;\n\n    for (var i = 0; i < cookies.length; i++) {\n        var cookie = cookies[i].trim();\n        if (cookie.indexOf(name + \"=\") === 0) {\n            toReturn = cookie.substring((name + \"=\").length, cookie.length);\n        }\n    }\n\n    return toReturn;\n}\n\n(function() {\n    var pageviewCount = gtm_getCookie(\"gtm_pageview_count\");\n\n    if (typeof pageviewCount === \"undefined\") {\n        pageviewCount = 1;\n    } else {\n        pageviewCount++;\n    }\n\n    gtm_setCookie(\"gtm_pageview_count\", pageviewCount, 30);\n\n})();\n</script>"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "supportDocumentWrite",
+                        "value": "false"
+                    }
+                ],
+                "fingerprint": "1705580790175",
+                "firingTriggerId": [
+                    "2147479553"
+                ],
+                "tagFiringOption": "ONCE_PER_EVENT",
+                "monitoringMetadata": {
+                    "type": "MAP"
+                },
+                "consentSettings": {
+                    "consentStatus": "NOT_SET"
+                }
+            }
+        ],
+        "trigger": [
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "triggerId": "5",
+                "name": "Window Loaded - 3rd Page View",
+                "type": "WINDOW_LOADED",
+                "filter": [
+                    {
+                        "type": "GREATER_OR_EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Cookie - pageviewCount}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "3"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1494967319353"
+            }
+        ],
+        "variable": [
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "variableId": "1",
+                "name": "Cookie - pageviewCount",
+                "type": "k",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "decodeCookie",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "pageviewCount"
+                    }
+                ],
+                "fingerprint": "1494966614088"
+            }
+        ],
+        "builtInVariable": [
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "type": "PAGE_URL",
+                "name": "Page URL"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "type": "PAGE_HOSTNAME",
+                "name": "Page Hostname"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "type": "PAGE_PATH",
+                "name": "Page Path"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "type": "REFERRER",
+                "name": "Referrer"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6905227",
+                "type": "EVENT",
+                "name": "Event"
+            }
+        ],
+        "fingerprint": "1705580853745",
+        "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/1164259306/containers/6905227/versions/0?apiLink=version"
+    }
+}
