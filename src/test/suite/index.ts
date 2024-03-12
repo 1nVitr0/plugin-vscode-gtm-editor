@@ -9,7 +9,10 @@ export async function run(): Promise<void> {
   const files = await glob("**/**.test.js", { cwd: testsRoot });
   files.forEach((f) => mocha.addFile(path.resolve(testsRoot, f)));
 
-  mocha.run((failures) => {
-    if (failures > 0) throw new Error(`${failures} tests failed.`);
+  return await new Promise((c, e) => {
+    mocha.run((failures) => {
+      if (failures > 0) e(new Error(`${failures} tests failed.`));
+      else c();
+    });
   });
 }

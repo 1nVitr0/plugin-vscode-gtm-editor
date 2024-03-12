@@ -47,7 +47,7 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
     );
   });
 
-  test("should contain all folders", async () => {
+  test("should get all folders", async () => {
     assert.equal(contentsProvider.getFolder().length, 1);
     assert.equal(contentsProvider.getFolder()[0].folderId, "14");
     assert.equal(contentsProvider.getFolder()[0].name, "GTM4WP");
@@ -57,11 +57,58 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
     assert.equal(contentsProvider.getFolder("GTM4WP")?.folderId, "GTM4WP");
   });
 
-  test("should contain all tags", async () => {
+  test("should get all tags", async () => {
     assert.equal(contentsProvider.getTag().length, 8);
   });
 
   test("should get all tags in folder", async () => {
     assert.equal(contentsProvider.getTag("GTM4WP").length, 7);
+  });
+
+  test("should get single tag", async () => {
+    assert.equal(contentsProvider.getTag("GTM4WP", "UA Enhanced Ecommerce WOO")?.tagId, "8");
+    assert.equal(contentsProvider.getTag(null, "UA Enhanced Ecommerce WOO")?.tagId, "8");
+  });
+
+  test("should get all triggers", async () => {
+    assert.equal(contentsProvider.getTrigger().length, 11);
+  });
+
+  test("should get all triggers in folder", async () => {
+    assert.equal(contentsProvider.getTrigger("GTM4WP").length, 10);
+  });
+
+  test("should get single trigger", async () => {
+    assert.equal(contentsProvider.getTrigger("GTM4WP", "Ecommerce events")?.triggerId, "13");
+    assert.equal(contentsProvider.getTrigger(null, "Ecommerce events")?.triggerId, "13");
+  });
+
+  test("should get all variables", async () => {
+    assert.equal(contentsProvider.getVariable().length, 57);
+  });
+
+  test("should get all variables in folder", async () => {
+    assert.equal(contentsProvider.getVariable("GTM4WP").length, 56);
+  });
+
+  test("should get single variable", async () => {
+    assert.equal(contentsProvider.getVariable("GTM4WP", "Reading - Time to Scroll")?.variableId, "2");
+    assert.equal(contentsProvider.getVariable(null, "Reading - Time to Scroll")?.variableId, "2");
+  });
+
+  test("should get all builtin variables", async () => {
+    assert.equal(contentsProvider.getBuiltInVariable().length, 5);
+  });
+
+  test("should get single builtin variable", async () => {
+    assert.equal(contentsProvider.getBuiltInVariable("Page URL")?.type, "PAGE_URL");
+  });
+
+  test("should get all custom templates", async () => {
+    assert.equal(contentsProvider.getCustomTemplate().length, 0);
+  });
+
+  test("should get single custom template", async () => {
+    assert.equal(contentsProvider.getCustomTemplate("Custom HTML Tag")?.templateId, "0");
   });
 });
