@@ -1,7 +1,7 @@
 import { Uri } from "vscode";
 import { GtmExportContentProvider } from "../../providers/GtmExportContentsProvider";
 import { join, resolve } from "path";
-import { strict as assert } from "assert";
+import * as assert from "assert";
 
 suite("Unit Tests for GtmExportContentsProvider", async () => {
   const fixtureDir = resolve(__dirname, "../../../test/fixtures");
@@ -10,31 +10,31 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
 
   const contentsProvider: GtmExportContentProvider = await GtmExportContentProvider.create(uri);
 
-  test("should create a GtmExportContentProvider", async () => {
+  test("should create a GtmExportContentProvider", () => {
     assert.ok(contentsProvider);
   });
 
-  test("should have a valid exportTime", async () => {
+  test("should have a valid exportTime", () => {
     assert.equal(contentsProvider.exportTime.toISOString(), "2018-02-15T09:45:11.000Z");
   });
 
-  test("should have a valid accountId", async () => {
+  test("should have a valid accountId", () => {
     assert.equal(contentsProvider.accountId, "124588580");
   });
 
-  test("should have a valid containerId", async () => {
+  test("should have a valid containerId", () => {
     assert.equal(contentsProvider.containerId, "6899612");
   });
 
-  test("should have a valid containerVersionId", async () => {
+  test("should have a valid containerVersionId", () => {
     assert.equal(contentsProvider.containerVersionId, "2");
   });
 
-  test("should have a valid fingerprint", async () => {
+  test("should have a valid fingerprint", () => {
     assert.equal(contentsProvider.fingerprint, "1518687838097");
   });
 
-  test("should contain valid container", async () => {
+  test("should contain valid container", () => {
     assert.equal(contentsProvider.getContainer().accountId, "124588580");
     assert.equal(contentsProvider.getContainer().containerId, "6899612");
     assert.equal(contentsProvider.getContainer().name, "gtm4wp container - WIP");
@@ -47,68 +47,68 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
     );
   });
 
-  test("should get all folders", async () => {
+  test("should get all folders", () => {
     assert.equal(contentsProvider.getFolder().length, 1);
     assert.equal(contentsProvider.getFolder()[0].folderId, "14");
     assert.equal(contentsProvider.getFolder()[0].name, "GTM4WP");
   });
 
-  test("should get single folder", async () => {
+  test("should get single folder", () => {
     assert.equal(contentsProvider.getFolder("GTM4WP")?.folderId, "GTM4WP");
   });
 
-  test("should get all tags", async () => {
+  test("should get all tags", () => {
     assert.equal(contentsProvider.getTag().length, 8);
   });
 
-  test("should get all tags in folder", async () => {
+  test("should get all tags in folder", () => {
     assert.equal(contentsProvider.getTag("GTM4WP").length, 7);
   });
 
-  test("should get single tag", async () => {
+  test("should get single tag", () => {
     assert.equal(contentsProvider.getTag("GTM4WP", "UA Enhanced Ecommerce WOO")?.tagId, "8");
     assert.equal(contentsProvider.getTag(null, "UA Enhanced Ecommerce WOO")?.tagId, "8");
   });
 
-  test("should get all triggers", async () => {
+  test("should get all triggers", () => {
     assert.equal(contentsProvider.getTrigger().length, 11);
   });
 
-  test("should get all triggers in folder", async () => {
+  test("should get all triggers in folder", () => {
     assert.equal(contentsProvider.getTrigger("GTM4WP").length, 10);
   });
 
-  test("should get single trigger", async () => {
+  test("should get single trigger", () => {
     assert.equal(contentsProvider.getTrigger("GTM4WP", "Ecommerce events")?.triggerId, "13");
     assert.equal(contentsProvider.getTrigger(null, "Ecommerce events")?.triggerId, "13");
   });
 
-  test("should get all variables", async () => {
+  test("should get all variables", () => {
     assert.equal(contentsProvider.getVariable().length, 57);
   });
 
-  test("should get all variables in folder", async () => {
+  test("should get all variables in folder", () => {
     assert.equal(contentsProvider.getVariable("GTM4WP").length, 56);
   });
 
-  test("should get single variable", async () => {
+  test("should get single variable", () => {
     assert.equal(contentsProvider.getVariable("GTM4WP", "Reading - Time to Scroll")?.variableId, "2");
     assert.equal(contentsProvider.getVariable(null, "Reading - Time to Scroll")?.variableId, "2");
   });
 
-  test("should get all builtin variables", async () => {
+  test("should get all builtin variables", () => {
     assert.equal(contentsProvider.getBuiltInVariable().length, 5);
   });
 
-  test("should get single builtin variable", async () => {
+  test("should get single builtin variable", () => {
     assert.equal(contentsProvider.getBuiltInVariable("Page URL")?.type, "PAGE_URL");
   });
 
-  test("should get all custom templates", async () => {
+  test("should get all custom templates", () => {
     assert.equal(contentsProvider.getCustomTemplate().length, 0);
   });
 
-  test("should get single custom template", async () => {
+  test("should get single custom template", () => {
     assert.equal(contentsProvider.getCustomTemplate("Custom HTML Tag")?.templateId, "0");
   });
 });
