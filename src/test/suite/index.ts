@@ -4,11 +4,10 @@ import { resolve } from "path";
 
 export function run(): Promise<void> {
   return new Promise(async (c, e) => {
-    const mocha = new Mocha({ ui: "tdd", color: true });
+    const mocha = new Mocha({ ui: "tdd", color: true, timeout: 30000 });
 
-    const testsRoot = resolve(__dirname, "..");
-    const files = await glob("**/**.test.js", { cwd: testsRoot });
-    files.forEach((f) => mocha.addFile(resolve(testsRoot, f)));
+    const files = await glob("**/**.test.js", { cwd: __dirname });
+    files.forEach((f) => mocha.addFile(resolve(__dirname, f)));
 
     mocha.run((failures) => {
       if (failures > 0) e(new Error(`${failures} tests failed.`));

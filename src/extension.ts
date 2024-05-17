@@ -1,6 +1,5 @@
 import { ExtensionContext, workspace } from "vscode";
 import contributeCommands from "./contribute/commands";
-import { GtmFileSystemProvider } from "./providers/GtmFileSystemProvider";
 import contributeFileSystemProviders from "./contribute/file-system";
 
 export function activate(context: ExtensionContext) {

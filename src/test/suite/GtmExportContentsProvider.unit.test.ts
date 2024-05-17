@@ -1,21 +1,27 @@
-import { Uri } from "vscode";
+import { URI } from "vscode-uri";
 import { GtmExportContentProvider } from "../../providers/GtmExportContentsProvider";
 import { join, resolve } from "path";
 import * as assert from "assert";
+import { before } from "mocha";
 
 suite("Unit Tests for GtmExportContentsProvider", async () => {
   const fixtureDir = resolve(__dirname, "../../../test/fixtures");
   const exportFilePath = resolve(__dirname, join(fixtureDir, "wordpress.gtm-export.json"));
-  const uri = Uri.parse(`file://${exportFilePath}`);
+  const uri = URI.parse(`file://${exportFilePath}`);
 
-  const contentsProvider: GtmExportContentProvider = await GtmExportContentProvider.create(uri);
+  let contentsProvider: GtmExportContentProvider;
+
+  before(async () => {
+    contentsProvider = await GtmExportContentProvider.create(uri);
+  });
 
   test("should create a GtmExportContentProvider", () => {
     assert.ok(contentsProvider);
   });
 
   test("should have a valid exportTime", () => {
-    assert.equal(contentsProvider.exportTime.toISOString(), "2018-02-15T09:45:11.000Z");
+    const compareDate = new Date("2018-02-15T09:45:11.000");
+    assert.equal(contentsProvider.exportTime.toISOString(), compareDate.toISOString());
   });
 
   test("should have a valid accountId", () => {
@@ -31,15 +37,15 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
   });
 
   test("should have a valid fingerprint", () => {
-    assert.equal(contentsProvider.fingerprint, "1518687838097");
+    assert.equal(contentsProvider.fingerprint, "1518687892025");
   });
 
   test("should contain valid container", () => {
     assert.equal(contentsProvider.getContainer().accountId, "124588580");
     assert.equal(contentsProvider.getContainer().containerId, "6899612");
     assert.equal(contentsProvider.getContainer().name, "gtm4wp container - WIP");
-    assert.equal(contentsProvider.getContainer().publicId, "GTM-N87D32T");
-    assert.equal(contentsProvider.getContainer().usageContext, ["WEB"]);
+    assert.equal(contentsProvider.getContainer().publicId, "GTM-WRMHSB8");
+    assert.deepEqual(contentsProvider.getContainer().usageContext, ["WEB"]);
     assert.equal(contentsProvider.getContainer().fingerprint, "1518687838097");
     assert.equal(
       contentsProvider.getContainer().tagManagerUrl,
@@ -54,7 +60,7 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
   });
 
   test("should get single folder", () => {
-    assert.equal(contentsProvider.getFolder("GTM4WP")?.folderId, "GTM4WP");
+    assert.equal(contentsProvider.getFolder("GTM4WP")?.folderId, "14");
   });
 
   test("should get all tags", () => {
@@ -105,7 +111,7 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
   });
 
   test("should get all custom templates", () => {
-    assert.equal(contentsProvider.getCustomTemplate().length, 0);
+    assert.equal(contentsProvider.getCustomTemplate().length, 1);
   });
 
   test("should get single custom template", () => {

@@ -2263,6 +2263,16 @@
                 "name": "Event"
             }
         ],
+        "customTemplate": [
+            {
+                "templateId": "0",
+                "name": "Custom HTML Tag",
+                "accountId": "124588580",
+                "containerId": "6899612",
+                "fingerprint": "1518687892025",
+                "templateData": ""
+            }
+        ],
         "fingerprint": "1518687892025",
         "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/124588580/containers/6899612/versions/2?apiLink=version"
     }
