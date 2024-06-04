@@ -326,7 +326,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
 
     // If path must be changed, trigger rename
-    if (originalItem && (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name)) {
+    if (
+      originalItem &&
+      itemType !== "folders" &&
+      (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name)
+    ) {
       const folder = content.getFolder().find((f) => f.folderId === item.parentFolderId)?.name;
       const itemName = item.name.replace(".json", "");
       await this.rename(uri, GtmFileSystemProvider.buildPath({ ...path, folder, itemName }), { overwrite: false });
@@ -407,7 +411,6 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
     switch (oldItemType) {
       case "folders":
-        // TODO: update folder name in json
         return this.writeFile(oldUri, Buffer.from(JSON.stringify(item)), { create: false, overwrite: true });
       case "container":
         content.setContainer(item);
