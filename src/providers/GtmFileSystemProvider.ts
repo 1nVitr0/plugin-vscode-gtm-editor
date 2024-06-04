@@ -389,8 +389,8 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         throw FileSystemError.Unavailable(uri);
     }
 
-    // If path must be change, trigger rename
-    if (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name) {
+    // If path must be changed, trigger rename
+    if (originalItem && (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name)) {
       const folder = content.getFolder().find((f) => f.folderId === item.parentFolderId)?.name;
       const itemName = item.name.replace(".json", "");
       await this.rename(uri, GtmFileSystemProvider.buildPath({ ...path, folder, itemName }), { overwrite: false });
@@ -412,7 +412,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (itemType && !itemName) throw FileSystemError.NoPermissions(uri);
 
     // Delete entire folders
-    if (folder) {
+    if (folder && !itemType && !itemName) {
       if (!recursive) throw FileSystemError.NoPermissions(uri);
 
       content.getTag(folder).map((t) => content.deleteTag(t.name));
