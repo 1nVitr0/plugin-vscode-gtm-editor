@@ -4,7 +4,7 @@ import { resolve } from "path";
 
 export function run(): Promise<void> {
   return new Promise(async (c, e) => {
-    const mocha = new Mocha({ ui: "tdd", color: true, timeout: 30000 });
+    const mocha = new Mocha({ ui: "tdd", color: true, timeout: 10000 });
 
     const files = await glob("**/**.test.js", { cwd: __dirname });
     files.forEach((f) => mocha.addFile(resolve(__dirname, f)));
