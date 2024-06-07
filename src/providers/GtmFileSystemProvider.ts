@@ -85,13 +85,13 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     return Uri.from({ scheme, fragment, path });
   }
 
-  async load(uri: Uri): Promise<GtmExportContentProvider> {
+  async load(uri: Uri, forceReload = false): Promise<GtmExportContentProvider> {
     const { fragment } = uri;
     const sourceUri = GtmFileSystemProvider.decodeAuthorityUri(fragment);
     const rootUri = GtmFileSystemProvider.buildPath({ sourceUri });
     const sourceKey = sourceUri.toString();
 
-    if (this._contentProviders.has(sourceKey)) return await this._contentProviders.get(sourceKey)!;
+    if (this._contentProviders.has(sourceKey) && !forceReload) return await this._contentProviders.get(sourceKey)!;
 
     const providerPromise = new Promise<GtmExportContentProvider>(async (resolve, reject) => {
       try {
@@ -102,8 +102,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         return reject(error);
       }
 
-      const content = await workspace.fs.readFile(sourceUri);
-      const contentProvider = new GtmExportContentProvider(sourceUri, content.toString());
+      const contentProvider = await GtmExportContentProvider.create(sourceUri);
       this._contentProviders.set(sourceKey, contentProvider);
       this._fireSoon({ type: FileChangeType.Created, uri: rootUri });
 
@@ -326,8 +325,12 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         throw FileSystemError.Unavailable(uri);
     }
 
-    // If path must be change, trigger rename
-    if (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name) {
+    // If path must be changed, trigger rename
+    if (
+      originalItem &&
+      itemType !== "folders" &&
+      (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name)
+    ) {
       const folder = content.getFolder().find((f) => f.folderId === item.parentFolderId)?.name;
       const itemName = item.name.replace(".json", "");
       await this.rename(uri, GtmFileSystemProvider.buildPath({ ...path, folder, itemName }), { overwrite: false });
@@ -349,7 +352,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (itemType && !itemName) throw FileSystemError.NoPermissions(uri);
 
     // Delete entire folders
-    if (folder) {
+    if (folder && !itemType && !itemName) {
       if (!recursive) throw FileSystemError.NoPermissions(uri);
 
       content.getTag(folder).map((t) => content.deleteTag(t.name));
@@ -413,19 +416,19 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         content.setContainer(item);
         return this._fireSoon(...events);
       case "tags":
-        content.setTag(newItemName, item);
+        content.setTag(oldItemName, item);
         return this._fireSoon(...events);
       case "triggers":
-        content.setTrigger(newItemName, item);
+        content.setTrigger(oldItemName, item);
         return this._fireSoon(...events);
       case "variables":
-        content.setVariable(newItemName, item);
+        content.setVariable(oldItemName, item);
         return this._fireSoon(...events);
       case "builtInVariables":
-        content.setBuiltInVariable(newItemName, item);
+        content.setBuiltInVariable(oldItemName, item);
         return this._fireSoon(...events);
       case "customTemplates":
-        content.setCustomTemplate(newItemName, item);
+        content.setCustomTemplate(oldItemName, item);
         return this._fireSoon(...events);
       default:
         throw FileSystemError.Unavailable(oldUri);
