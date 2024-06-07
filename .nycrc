@@ -1,0 +1,11 @@
+{
+  "all": true,
+  "exclude": [
+    "test"
+  ],
+  "output": "reports",
+  "reporter": [
+    "html",
+    "text"
+  ]
+}

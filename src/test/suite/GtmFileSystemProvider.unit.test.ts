@@ -1,18 +1,17 @@
 import * as assert from "assert";
 import { GtmFileSystemProvider } from "../../providers/GtmFileSystemProvider";
-import { Uri, FileType } from "vscode";
+import { Uri, FileType, workspace } from "vscode";
 import { GtmExportContentProvider } from "../../providers/GtmExportContentsProvider";
 import { resolve } from "path";
 import { after, afterEach, before, beforeEach } from "mocha";
-import { readFile, writeFile } from "fs/promises";
 
 suite("Unit Tests for GtmFileSystemProvider", async () => {
   const fixtureDir = resolve(__dirname, "../../../test/fixtures");
   const fixturePath = resolve(fixtureDir, "wordpress.gtm-export.json");
-  const fixtureFileUri = Uri.file(fixturePath);
+  const fixtureUri = Uri.file(fixturePath);
   const gtmUri = Uri.from({
     scheme: "gtm",
-    fragment: encodeURIComponent(encodeURIComponent(fixtureFileUri.toString())),
+    fragment: encodeURIComponent(encodeURIComponent(fixtureUri.toString())),
     path: "/",
   });
   const containerPath = "/accounts/124588580/containers/6899612";
@@ -22,12 +21,12 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
   let originalContent = "";
 
   before(async () => {
-    originalContent = (await readFile(fixturePath)).toString();
+    originalContent = (await workspace.fs.readFile(fixtureUri)).toString();
     gtmFileSystem = new GtmFileSystemProvider();
   });
 
   after(async () => {
-    await writeFile(fixturePath, originalContent);
+    await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
   });
 
   test("should create a GtmFileSystemProvider", async () => {
@@ -259,7 +258,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     test("should throw error if folder does not exist", async () => {
       const folderUri = gtmUri.with({ path: `${containerPath}/_folders/NonExistentFolder.json` });
-      await assert.rejects(gtmFileSystem.readFile(folderUri));
+      await assert.rejects(gtmFileSystem.readFile(folderUri), "Expected EntryNotFound Exception");
     });
 
     // Tags
@@ -277,12 +276,12 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     test("should throw error if tag does not exist", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/_tags/NonExistentTag.json` });
-      await assert.rejects(gtmFileSystem.readFile(tagsUri));
+      await assert.rejects(gtmFileSystem.readFile(tagsUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if tag does not exist in folder", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/tags/UA Contact Form 7 Submit.json` });
-      await assert.rejects(gtmFileSystem.readFile(tagsUri));
+      await assert.rejects(gtmFileSystem.readFile(tagsUri), "Expected EntryNotFound Exception");
     });
 
     // Triggers
@@ -300,12 +299,12 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     test("should throw error if trigger does not exist", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/_triggers/NonExistentTrigger.json` });
-      await assert.rejects(gtmFileSystem.readFile(triggersUri));
+      await assert.rejects(gtmFileSystem.readFile(triggersUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if trigger does not exist in folder", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/GTM4WP/triggers/Contact Form 7 Submitted.json` });
-      await assert.rejects(gtmFileSystem.readFile(triggersUri));
+      await assert.rejects(gtmFileSystem.readFile(triggersUri), "Expected EntryNotFound Exception");
     });
 
     // Variables
@@ -323,12 +322,12 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     test("should throw error if variable does not exist", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/_variables/NonExistentVariable.json` });
-      await assert.rejects(gtmFileSystem.readFile(variablesUri));
+      await assert.rejects(gtmFileSystem.readFile(variablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if variable does not exist in folder", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/GTM4WP/variables/GA config - with ecommerce.json` });
-      await assert.rejects(gtmFileSystem.readFile(variablesUri));
+      await assert.rejects(gtmFileSystem.readFile(variablesUri), "Expected EntryNotFound Exception");
     });
 
     // Built-in Variables
@@ -342,7 +341,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const builtInVariablesUri = gtmUri.with({
         path: `${containerPath}/_builtInVariables/NonExistentBuiltInVariable.json`,
       });
-      await assert.rejects(gtmFileSystem.readFile(builtInVariablesUri));
+      await assert.rejects(gtmFileSystem.readFile(builtInVariablesUri), "Expected EntryNotFound Exception");
     });
 
     // Custom Templates
@@ -356,7 +355,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const customTemplatesUri = gtmUri.with({
         path: `${containerPath}/_customTemplates/NonExistentCustomTemplate.json`,
       });
-      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri));
+      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri), "Expected EntryNotFound Exception");
     });
   });
 
@@ -364,11 +363,11 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
   suite("Unit Tests for GtmFileSystemProvider.writeFile", async () => {
     beforeEach(async () => {
-      await gtmFileSystem.load(gtmUri);
+      await gtmFileSystem.load(gtmUri, true);
     });
 
     afterEach(async () => {
-      await writeFile(fixturePath, originalContent);
+      await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
     });
 
     // Container
@@ -649,131 +648,154 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
   suite("Unit Tests for GtmFileSystemProvider.delete", async () => {
     beforeEach(async () => {
-      await gtmFileSystem.load(gtmUri);
+      await gtmFileSystem.load(gtmUri, true);
     });
 
     afterEach(async () => {
-      await writeFile(fixturePath, originalContent);
+      await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
     });
 
     // Container
     test("should throw error on deleting container", async () => {
       const containerUri = gtmUri.with({ path: `${containerPath}/_container/GTM4WP.json` });
-      await assert.rejects(gtmFileSystem.delete(containerUri, { recursive: false }));
+      await assert.rejects(
+        gtmFileSystem.delete(containerUri, { recursive: false }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Folders
     test("should throw error on deleting folder files", async () => {
       const folderUri = gtmUri.with({ path: `${containerPath}/_folders/GTM4WP.json` });
-      await assert.rejects(gtmFileSystem.delete(folderUri, { recursive: false }));
+      await assert.rejects(gtmFileSystem.delete(folderUri, { recursive: false }), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if folder does not exist", async () => {
       const folderUri = gtmUri.with({ path: `${containerPath}/_folders/NonExistentFolder.json` });
-      await assert.rejects(gtmFileSystem.delete(folderUri, { recursive: false }));
+      await assert.rejects(gtmFileSystem.delete(folderUri, { recursive: false }), "Expected EntryNotFound Exception");
     });
 
     // Tags
     test("should delete tags globally", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/_tags/UA Contact Form 7 Submit.json` });
       await gtmFileSystem.delete(tagsUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(tagsUri));
+      await assert.rejects(gtmFileSystem.readFile(tagsUri), "Expected EntryNotFound Exception");
     });
 
     test("should delete tags in folder", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/tags/UA Form element Enter - Leave.json` });
       await gtmFileSystem.delete(tagsUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(tagsUri));
+      await assert.rejects(gtmFileSystem.readFile(tagsUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if tag does not exist", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/_tags/NonExistentTag.json` });
-      await assert.rejects(gtmFileSystem.delete(tagsUri, { recursive: false }));
+      await assert.rejects(gtmFileSystem.delete(tagsUri, { recursive: false }), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if tag does not exist in folder", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/tags/UA Contact Form 7 Submit.json` });
-      await assert.rejects(gtmFileSystem.delete(tagsUri, { recursive: false }));
+      await assert.rejects(gtmFileSystem.delete(tagsUri, { recursive: false }), "Expected EntryNotFound Exception");
     });
 
     // Triggers
     test("should delete triggers globally", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/_triggers/Contact Form 7 Submitted.json` });
       await gtmFileSystem.delete(triggersUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(triggersUri));
+      await assert.rejects(gtmFileSystem.readFile(triggersUri), "Expected EntryNotFound Exception");
     });
 
     test("should delete triggers in folder", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/GTM4WP/triggers/Form Element Enter.json` });
       await gtmFileSystem.delete(triggersUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(triggersUri));
+      await assert.rejects(gtmFileSystem.readFile(triggersUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if trigger does not exist", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/_triggers/NonExistentTrigger.json` });
-      await assert.rejects(gtmFileSystem.delete(triggersUri, { recursive: false }));
+      await assert.rejects(gtmFileSystem.delete(triggersUri, { recursive: false }), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if trigger does not exist in folder", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/GTM4WP/triggers/Contact Form 7 Submitted.json` });
-      await assert.rejects(gtmFileSystem.delete(triggersUri, { recursive: false }));
+      await assert.rejects(gtmFileSystem.delete(triggersUri, { recursive: false }), "Expected EntryNotFound Exception");
     });
 
     // Variables
     test("should delete variables globally", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/_variables/GA config - with ecommerce.json` });
       await gtmFileSystem.delete(variablesUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(variablesUri));
+      await assert.rejects(gtmFileSystem.readFile(variablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should delete variables in folder", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/GTM4WP/variables/browserEngineName.json` });
       await gtmFileSystem.delete(variablesUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(variablesUri));
+      await assert.rejects(gtmFileSystem.readFile(variablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if variable does not exist", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/_variables/NonExistentVariable.json` });
-      await assert.rejects(gtmFileSystem.delete(variablesUri, { recursive: false }));
+      await assert.rejects(
+        gtmFileSystem.delete(variablesUri, { recursive: false }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     test("should throw error if variable does not exist in folder", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/GTM4WP/variables/GA config - with ecommerce.json` });
-      await assert.rejects(gtmFileSystem.delete(variablesUri, { recursive: false }));
+      await assert.rejects(
+        gtmFileSystem.delete(variablesUri, { recursive: false }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Built-in Variables
     test("should delete builtInVariables", async () => {
       const builtInVariablesUri = gtmUri.with({ path: `${containerPath}/_builtInVariables/Page Hostname.json` });
       await gtmFileSystem.delete(builtInVariablesUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(builtInVariablesUri));
+      await assert.rejects(gtmFileSystem.readFile(builtInVariablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if builtInVariable does not exist", async () => {
       const builtInVariablesUri = gtmUri.with({
         path: `${containerPath}/_builtInVariables/NonExistentBuiltInVariable.json`,
       });
-      await assert.rejects(gtmFileSystem.delete(builtInVariablesUri, { recursive: false }));
+      await assert.rejects(
+        gtmFileSystem.delete(builtInVariablesUri, { recursive: false }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Custom Templates
     test("should delete customTemplates", async () => {
       const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag.json` });
       await gtmFileSystem.delete(customTemplatesUri, { recursive: false });
-      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri));
+      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if customTemplate does not exist", async () => {
       const customTemplatesUri = gtmUri.with({
         path: `${containerPath}/_customTemplates/NonExistentCustomTemplate.json`,
       });
-      await assert.rejects(gtmFileSystem.delete(customTemplatesUri, { recursive: false }));
+      await assert.rejects(
+        gtmFileSystem.delete(customTemplatesUri, { recursive: false }),
+        "Expected EntryNotFound Exception"
+      );
     });
   });
 
   //#region Unit Tests for GtmFileSystemProvider.rename
 
   suite("Unit Tests for GtmFileSystemProvider.rename", async () => {
+    beforeEach(async () => {
+      await gtmFileSystem.load(gtmUri, true);
+    });
+
+    afterEach(async () => {
+      await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
+    });
+
     // Container
     test("should rename container", async () => {
       const containerUri = gtmUri.with({ path: `${containerPath}/_container/gtm4wp container - WIP.json` });
@@ -782,7 +804,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const container = await gtmFileSystem.readFile(newContainerUri);
 
       assert.ok(Buffer.isBuffer(container), "Container is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(containerUri));
+      await assert.rejects(gtmFileSystem.readFile(containerUri), "Expected EntryNotFound Exception");
     });
 
     // Folders
@@ -793,13 +815,16 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const folder = await gtmFileSystem.readFile(newFolderUri);
 
       assert.ok(Buffer.isBuffer(folder), "Folder is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(folderUri));
+      await assert.rejects(gtmFileSystem.readFile(folderUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if folder does not exist", async () => {
       const folderUri = gtmUri.with({ path: `${containerPath}/_folders/NonExistentFolder.json` });
       const newFolderUri = gtmUri.with({ path: `${containerPath}/_folders/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(folderUri, newFolderUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(folderUri, newFolderUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Tags
@@ -810,7 +835,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const tags = await gtmFileSystem.readFile(newTagsUri);
 
       assert.ok(Buffer.isBuffer(tags), "Tags is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(tagsUri));
+      await assert.rejects(gtmFileSystem.readFile(tagsUri), "Expected EntryNotFound Exception");
     });
 
     test("should rename tags in folder", async () => {
@@ -820,19 +845,25 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const tags = await gtmFileSystem.readFile(newTagsUri);
 
       assert.ok(Buffer.isBuffer(tags), "Tags is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(tagsUri));
+      await assert.rejects(gtmFileSystem.readFile(tagsUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if tag does not exist", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/_tags/NonExistentTag.json` });
       const newTagsUri = gtmUri.with({ path: `${containerPath}/_tags/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     test("should throw error if tag does not exist in folder", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/tags/UA Contact Form 7 Submit.json` });
       const newTagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/tags/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Triggers
@@ -843,7 +874,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const triggers = await gtmFileSystem.readFile(newTriggersUri);
 
       assert.ok(Buffer.isBuffer(triggers), "Triggers is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(triggersUri));
+      await assert.rejects(gtmFileSystem.readFile(triggersUri), "Expected EntryNotFound Exception");
     });
 
     test("should rename triggers in folder", async () => {
@@ -853,19 +884,25 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const triggers = await gtmFileSystem.readFile(newTriggersUri);
 
       assert.ok(Buffer.isBuffer(triggers), "Triggers is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(triggersUri));
+      await assert.rejects(gtmFileSystem.readFile(triggersUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if trigger does not exist", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/_triggers/NonExistentTrigger.json` });
       const newTriggersUri = gtmUri.with({ path: `${containerPath}/_triggers/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(triggersUri, newTriggersUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(triggersUri, newTriggersUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     test("should throw error if trigger does not exist in folder", async () => {
       const triggersUri = gtmUri.with({ path: `${containerPath}/GTM4WP/triggers/Contact Form 7 Submitted.json` });
       const newTriggersUri = gtmUri.with({ path: `${containerPath}/GTM4WP/triggers/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(triggersUri, newTriggersUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(triggersUri, newTriggersUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Variables
@@ -876,7 +913,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const variables = await gtmFileSystem.readFile(newVariablesUri);
 
       assert.ok(Buffer.isBuffer(variables), "Variables is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(variablesUri));
+      await assert.rejects(gtmFileSystem.readFile(variablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should rename variables in folder", async () => {
@@ -886,19 +923,25 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const variables = await gtmFileSystem.readFile(newVariablesUri);
 
       assert.ok(Buffer.isBuffer(variables), "Variables is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(variablesUri));
+      await assert.rejects(gtmFileSystem.readFile(variablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if variable does not exist", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/_variables/NonExistentVariable.json` });
       const newVariablesUri = gtmUri.with({ path: `${containerPath}/_variables/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(variablesUri, newVariablesUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(variablesUri, newVariablesUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     test("should throw error if variable does not exist in folder", async () => {
       const variablesUri = gtmUri.with({ path: `${containerPath}/GTM4WP/variables/GA config - with ecommerce.json` });
       const newVariablesUri = gtmUri.with({ path: `${containerPath}/GTM4WP/variables/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(variablesUri, newVariablesUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(variablesUri, newVariablesUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Built-in Variables
@@ -909,7 +952,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const builtInVariables = await gtmFileSystem.readFile(newBuiltInVariablesUri);
 
       assert.ok(Buffer.isBuffer(builtInVariables), "BuiltInVariables is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(builtInVariablesUri));
+      await assert.rejects(gtmFileSystem.readFile(builtInVariablesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if builtInVariable does not exist", async () => {
@@ -917,7 +960,10 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
         path: `${containerPath}/_builtInVariables/NonExistentBuiltInVariable.json`,
       });
       const newBuiltInVariablesUri = gtmUri.with({ path: `${containerPath}/_builtInVariables/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(builtInVariablesUri, newBuiltInVariablesUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(builtInVariablesUri, newBuiltInVariablesUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Custom Templates
@@ -928,7 +974,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const customTemplates = await gtmFileSystem.readFile(newCustomTemplatesUri);
 
       assert.ok(Buffer.isBuffer(customTemplates), "CustomTemplates is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri));
+      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if customTemplate does not exist", async () => {
@@ -936,20 +982,29 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
         path: `${containerPath}/_customTemplates/NonExistentCustomTemplate.json`,
       });
       const newCustomTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(customTemplatesUri, newCustomTemplatesUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(customTemplatesUri, newCustomTemplatesUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     // Switching Types
     test("should throw error if types are switched globally", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/_tags/UA Contact Form 7 Submit.json` });
       const newTagsUri = gtmUri.with({ path: `${containerPath}/_folders/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
 
     test("should throw error if types are switched in folder", async () => {
       const tagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/tags/UA Form element Enter - Leave.json` });
       const newTagsUri = gtmUri.with({ path: `${containerPath}/GTM4WP/variables/Test.json` });
-      await assert.rejects(gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }));
+      await assert.rejects(
+        gtmFileSystem.rename(tagsUri, newTagsUri, { overwrite: true }),
+        "Expected EntryNotFound Exception"
+      );
     });
   });
 });
