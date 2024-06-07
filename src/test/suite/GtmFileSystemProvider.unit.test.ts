@@ -368,6 +368,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     afterEach(async () => {
       await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
+      await new Promise((r) => setTimeout(r, 200));
     });
 
     // Container
@@ -653,6 +654,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     afterEach(async () => {
       await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
+      await new Promise((r) => setTimeout(r, 200));
     });
 
     // Container
@@ -794,6 +796,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     afterEach(async () => {
       await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
+      await new Promise((r) => setTimeout(r, 200));
     });
 
     // Container
