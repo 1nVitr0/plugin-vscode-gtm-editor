@@ -5,16 +5,9 @@ export interface GtmPath {
   accountId?: string;
   containerId?: string;
   folder?: string;
-  itemType?:
-    | "folders"
-    | "tags"
-    | "triggers"
-    | "variables"
-    | "builtInVariables"
-    | "customTemplates"
-    | "container";
+  itemType?: "folders" | "tags" | "triggers" | "variables" | "builtInVariables" | "customTemplates" | "container";
   itemName?: string;
   accounts?: boolean;
   containers?: boolean;
-  subsection?: string;
+  section?: string;
 }

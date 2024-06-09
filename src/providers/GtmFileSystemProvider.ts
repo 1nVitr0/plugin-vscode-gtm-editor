@@ -20,23 +20,25 @@ import { GtmTag } from "../types/gtm/GtmTag";
 import { GtmTrigger } from "../types/gtm/GtmTrigger";
 import { GtmVariable } from "../types/gtm/GtmVariable";
 import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
-import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
+import { GtmCustomTemplateDataSections, GtmCustomTemplateParsed } from "../types/gtm/GtmCustomTemplate";
 import { GtmContainer } from "../types/gtm/GtmContainer";
-
-const keyToFileType: {
-  [k in keyof GtmCustomTemplate["templateData"]]: string;
-} = {
-  tos: "txt",
-  info: "json",
-  templateParameters: "json",
-  sandboxedJs: "js",
-  webPermissions: "json",
-  tests: "yml",
-  notes: "txt",
-};
 
 export class GtmFileSystemProvider implements FileSystemProvider {
   public static scheme = "gtm";
+
+  private static itemTypeSupportingSections: GtmPath["itemType"][] = ["customTemplates"];
+
+  private static customTemplateFileType: {
+    [k in keyof GtmCustomTemplateDataSections]: string;
+  } = {
+    termsOfService: "txt",
+    info: "json",
+    templateParameters: "json",
+    sandboxedJs: "js",
+    webPermissions: "json",
+    tests: "yml",
+    notes: "txt",
+  };
 
   private _contentProviders: Map<string, GtmExportContentProvider | Promise<GtmExportContentProvider>> = new Map();
   private _emitter = new EventEmitter<FileChangeEvent[]>();
@@ -148,7 +150,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
   async stat(uri: Uri): Promise<FileStat> {
     const content = await this.load(uri);
-    const { accountId, containerId, folder, itemType, itemName, subsection } = await this.resolvePath(uri);
+    const { accountId, containerId, folder, itemType, itemName, section } = await this.resolvePath(uri);
 
     const ctime = content.exportTime.getTime();
     const mtime = content.updateTime.getTime();
@@ -156,13 +158,16 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (accountId && accountId !== content.accountId) throw FileSystemError.FileNotFound(uri);
     if (containerId && containerId !== content.containerId) throw FileSystemError.FileNotFound(uri);
 
-    if (itemType === "customTemplates") {
-      if (subsection) return { type: FileType.File, ctime, mtime, size: 0 };
+    if (itemName && section) {
+      const data =
+        itemType === "customTemplates"
+          ? content.getCustomTemplate(itemName)?.templateDataSections[section as keyof GtmCustomTemplateDataSections]
+          : null;
+      const size = data ? data.length : 0;
 
-      return { type: FileType.Directory, ctime, mtime, size: 0 };
-    }
-
-    if (itemName) {
+      if (!data) throw FileSystemError.FileNotFound(uri);
+      return { type: FileType.File, ctime, mtime, size };
+    } else if (itemName) {
       const data =
         itemType === "folders"
           ? content.getFolder(itemName)
@@ -180,9 +185,14 @@ export class GtmFileSystemProvider implements FileSystemProvider {
           ? content.getCustomTemplate(itemName)
           : null;
       const size = data ? JSON.stringify(data).length : 0;
+      const supportsSection = GtmFileSystemProvider.itemTypeSupportingSections.includes(itemType);
 
       if (!data) throw FileSystemError.FileNotFound(uri);
-      return { type: FileType.File, ctime, mtime, size };
+      if (section && !supportsSection) throw FileSystemError.FileNotFound(uri);
+
+      return supportsSection && !section
+        ? { type: FileType.Directory, ctime, mtime, size: 0 }
+        : { type: FileType.File, ctime, mtime, size };
     } else if (folder) {
       const folders = content.getFolder().map((f) => f.name);
 
@@ -195,14 +205,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
   async readDirectory(uri: Uri): Promise<[string, FileType][]> {
     const content = await this.load(uri);
-    const { accountId, containerId, folder, itemType, accounts, containers, itemName } = await this.resolvePath(uri);
-    if (itemType === "customTemplates" && itemName) {
-      return Object.keys(content.getCustomTemplate(itemName)!.templateData).map(
-        // @ts-expect-error go away
-        (key) => [`${key}.${keyToFileType[key]}`, FileType.File]
-      );
-    }
-    if (itemName) throw FileSystemError.FileNotADirectory(uri);
+    const { accountId, containerId, folder, itemType, accounts, containers, itemName, section } =
+      await this.resolvePath(uri);
+
+    if (section) throw FileSystemError.FileNotFound(uri);
+    if (itemName && itemType !== "customTemplates") throw FileSystemError.FileNotADirectory(uri);
     if (!accounts) return [["accounts", FileType.Directory]];
     if (!accountId) return [[content.accountId, FileType.Directory]];
     if (!containers) return [["containers", FileType.Directory]];
@@ -223,6 +230,16 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         case "builtInVariables":
           return content.getBuiltInVariable().map((t) => [`${t.name}.json`, FileType.File]);
         case "customTemplates":
+          if (itemName) {
+            const templateDataSections = content.getCustomTemplate(itemName)?.templateDataSections;
+            if (!templateDataSections) throw FileSystemError.FileNotFound(uri);
+            return [
+              ...(Object.keys(templateDataSections) as (keyof GtmCustomTemplateDataSections)[]).map<[string, FileType]>(
+                (key) => [`${key}.${GtmFileSystemProvider.customTemplateFileType[key]}`, FileType.File]
+              ),
+              [`${itemName}.json`, FileType.File],
+            ];
+          }
           return content.getCustomTemplate().map((t) => [t.name, FileType.Directory]);
         default:
           return [];
@@ -247,14 +264,50 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  createDirectory(uri: Uri): void {
-    throw new Error("Method not implemented.");
+  async createDirectory(uri: Uri): Promise<void> {
+    const content = await this.load(uri);
+    const { accounts, accountId, containers, containerId, itemType, itemName, section } = await this.resolvePath(uri);
+
+    if (!accounts || !accountId || !containers || !containerId) throw FileSystemError.NoPermissions(uri);
+    if (accountId && accountId !== content.accountId) throw FileSystemError.FileNotFound(uri);
+    if (containerId && containerId !== content.containerId) throw FileSystemError.FileNotFound(uri);
+    if (section) throw FileSystemError.Unavailable(uri); // Not a directory
+
+    switch (itemType) {
+      case "folders":
+        throw new Error("Method not implemented");
+      case "container":
+        throw new Error("Method not implemented");
+      case "tags":
+        throw new Error("Method not implemented");
+      case "triggers":
+        throw new Error("Method not implemented");
+      case "variables":
+        throw new Error("Method not implemented");
+      case "builtInVariables":
+        throw new Error("Method not implemented");
+      case "customTemplates":
+        if (!itemName) throw new Error("Method not implemented");
+        const templateId = Math.max(0, ...content.getCustomTemplate().map((t) => parseInt(t.templateId))) + 1;
+        content.setCustomTemplate(itemName, {
+          accountId: content.accountId as `${number}`,
+          containerId: content.containerId as `${number}`,
+          templateId: `${templateId}`,
+          name: itemName,
+          fingerprint: "", // TODO: Generate Fingerprint
+          templateData: "",
+          templateDataSections: {},
+        });
+        break;
+      default:
+        throw FileSystemError.Unavailable(uri);
+    }
   }
 
   async readFile(uri: Uri): Promise<Uint8Array> {
     const content = await this.load(uri);
     const stat = await this.stat(uri); // Will throw error if it doesn't exist
-    const { accountId, containerId, folder, itemType, itemName, subsection } = await this.resolvePath(uri);
+    const { accountId, containerId, folder, itemType, itemName, section } = await this.resolvePath(uri);
 
     if (stat.type === FileType.Directory) throw FileSystemError.FileIsADirectory(uri);
     if (!accountId || !containerId || !itemType || !itemName) throw FileSystemError.FileNotFound(uri);
@@ -275,12 +328,15 @@ export class GtmFileSystemProvider implements FileSystemProvider {
       case "builtInVariables":
         return Buffer.from(JSON.stringify(content.getBuiltInVariable(itemName), null, 2));
       case "customTemplates":
-        if (!subsection) throw FileSystemError.FileNotFound(uri);
+        if (!section) throw FileSystemError.FileIsADirectory(uri);
+        const { templateDataSections, ...customTemplate } = content.getCustomTemplate(itemName) ?? {};
+        const sectionContent =
+          section === itemName
+            ? JSON.stringify(customTemplate, null, 2)
+            : templateDataSections?.[section as keyof GtmCustomTemplateDataSections];
+        if (typeof sectionContent !== "string") throw FileSystemError.FileNotFound(uri);
 
-        return Buffer.from(
-          // @ts-expect-error go away
-          content.getCustomTemplate(itemName)?.templateData[subsection]
-        );
+        return Buffer.from(sectionContent);
       default:
         throw FileSystemError.FileNotFound(uri);
     }
@@ -297,40 +353,27 @@ export class GtmFileSystemProvider implements FileSystemProvider {
       else throw e;
     });
     const path = await this.resolvePath(uri);
-    const { sourceUri, accounts, accountId, containers, containerId, itemType, itemName, subsection } = path;
+    const { sourceUri, accounts, accountId, containers, containerId, itemType, itemName, section } = path;
 
     if (original && !overwrite) throw FileSystemError.FileExists(uri);
     if (!accountId || !containerId || !itemType || !itemName) throw FileSystemError.Unavailable(uri);
 
-    let item: GtmPropertyWithFolder;
-    let originalItem: GtmPropertyWithFolder | null;
+    const item = section ? null : (JSON.parse(data.toString()) as GtmPropertyWithFolder);
+    const originalItem = original ? (JSON.parse(original.toString()) as GtmPropertyWithFolder) : null;
+    const event = { type: create ? FileChangeType.Created : FileChangeType.Changed, uri };
 
-    if (itemType === "customTemplates" && subsection) {
-      originalItem = content.getCustomTemplate(itemName) || null;
-      item = {
-        ...originalItem,
-        templateData: {
-          // @ts-expect-error go away
-          ...originalItem?.templateData,
-          [subsection]: data.toString(),
-        },
-      } as GtmPropertyWithFolder;
-    } else {
-      item = JSON.parse(data.toString()) as GtmPropertyWithFolder;
-      originalItem = original ? (JSON.parse(original.toString()) as GtmPropertyWithFolder) : null;
-    }
-    const event = {
-      type: create ? FileChangeType.Created : FileChangeType.Changed,
-      uri,
-    };
-
-    if (originalItem && (item.accountId !== originalItem.accountId || item.containerId !== originalItem.containerId)) {
+    if (
+      originalItem &&
+      item &&
+      (item.accountId !== originalItem.accountId || item.containerId !== originalItem.containerId)
+    ) {
       window.showErrorMessage(`Cannot change account or container ID on a ${itemType ?? "file"} basis`);
       throw FileSystemError.Unavailable(uri);
     }
 
     switch (itemType) {
       case "folders":
+        if (!item) throw FileSystemError.Unavailable(uri);
         if (originalItem && originalItem.name !== item.name) {
           const baseFolderEvent = {
             sourceUri,
@@ -362,27 +405,37 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         this._fireSoon(event);
         break;
       case "container":
+        console.log("container", item);
+        if (!item) throw FileSystemError.Unavailable(uri);
         content.setContainer(item as GtmContainer);
         this._fireSoon(event);
         break;
       case "tags":
+        if (!item) throw FileSystemError.Unavailable(uri);
         content.setTag(itemName, item as GtmTag);
         this._fireSoon(event);
         break;
       case "triggers":
+        if (!item) throw FileSystemError.Unavailable(uri);
         content.setTrigger(itemName, item as GtmTrigger);
         this._fireSoon(event);
         break;
       case "variables":
+        if (!item) throw FileSystemError.Unavailable(uri);
         content.setVariable(itemName, item as GtmVariable);
         this._fireSoon(event);
         break;
       case "builtInVariables":
+        if (!item) throw FileSystemError.Unavailable(uri);
         content.setBuiltInVariable(itemName, item as GtmBuiltInVariable);
         this._fireSoon(event);
         break;
       case "customTemplates":
-        content.setCustomTemplate(itemName, item as GtmCustomTemplate);
+        if (!section) throw FileSystemError.FileIsADirectory(uri);
+        if (section === itemName) content.setCustomTemplate(itemName, item as GtmCustomTemplateParsed);
+        else
+          content.setCustomTemplateSection(itemName, section as keyof GtmCustomTemplateDataSections, data.toString());
+
         this._fireSoon(event);
         break;
       default:
@@ -392,6 +445,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     // If path must be changed, trigger rename
     if (
       originalItem &&
+      item &&
       itemType !== "folders" &&
       (item.parentFolderId !== originalItem?.parentFolderId || item.name !== originalItem?.name)
     ) {
@@ -404,7 +458,8 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   async delete(uri: Uri, { recursive }: { readonly recursive: boolean }): Promise<void> {
     const content = await this.load(uri);
     const event = { type: FileChangeType.Deleted, uri };
-    const { accounts, accountId, containers, containerId, folder, itemType, itemName } = await this.resolvePath(uri);
+    const { accounts, accountId, containers, containerId, folder, itemType, itemName, section } =
+      await this.resolvePath(uri);
 
     // Will throw Error if file doesn't exist
     await this.stat(uri);
@@ -446,7 +501,9 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         content.deleteBuiltInVariable(itemName);
         return this._fireSoon(event);
       case "customTemplates":
-        content.deleteCustomTemplate(itemName);
+        if (section && section !== itemName)
+          content.deleteCustomTemplateSection(itemName, section as keyof GtmCustomTemplateDataSections);
+        else content.deleteCustomTemplate(itemName);
         return this._fireSoon(event);
       default:
         throw FileSystemError.FileNotFound(uri);
@@ -455,23 +512,31 @@ export class GtmFileSystemProvider implements FileSystemProvider {
 
   async rename(oldUri: Uri, newUri: Uri, { overwrite }: { readonly overwrite: boolean }): Promise<void> {
     const content = await this.load(oldUri);
-    const { itemType: oldItemType, itemName: oldItemName } = await this.resolvePath(oldUri);
-    const { folder: newFolder, itemType: newItemType, itemName: newItemName } = await this.resolvePath(newUri);
+    const { itemType: oldItemType, itemName: oldItemName, section: oldSection } = await this.resolvePath(oldUri);
+    const {
+      folder: newFolder,
+      itemType: newItemType,
+      itemName: newItemName,
+      section: newSection,
+    } = await this.resolvePath(newUri);
     const events = [
       { type: FileChangeType.Deleted, uri: oldUri },
       { type: FileChangeType.Created, uri: newUri },
     ];
+    const supportsSections = GtmFileSystemProvider.itemTypeSupportingSections.includes(newItemType);
 
     // TODO: rename accountId or containerId
 
     if (oldItemType !== newItemType) throw FileSystemError.Unavailable(newUri);
     if (!oldItemName || !newItemName) throw FileSystemError.Unavailable(newUri);
+    if (newSection && !supportsSections) throw FileSystemError.Unavailable(newUri);
+    if (supportsSections && (!oldSection || !newSection)) throw FileSystemError.Unavailable(newUri);
     if (!overwrite && (await this.exists(newUri))) throw FileSystemError.FileExists(newUri);
 
     const item = JSON.parse((await this.readFile(oldUri)).toString()); // Will throw Error if file doesn't exist
     if (newFolder) item.parentFolderId = content.getFolder(newFolder)?.folderId;
     else delete item.parentFolderId;
-    item.name = newItemName;
+    item.name = oldSection === oldItemName ? newSection : newItemName;
 
     switch (oldItemType) {
       case "folders":
@@ -500,10 +565,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   }
 
   private async resolvePath(uri: Uri): Promise<GtmPath> {
-    // gtm:/accounts/[accountId]/containers/[containerId]/[folder?]/[itemType?]/[itemName?]/[subsection?]#[sourceUri]
+    // gtm:/accounts/[accountId]/containers/[containerId]/[folder?]/[itemType?]/[itemName?]/[section?]#[sourceUri]
     const content = await this.load(uri);
     const { fragment, path } = uri;
-    const [, accounts, accountId, containers, containerId, folderOrItemType, itemTypeOrId, id] = path.split("/");
+    const [, accounts, accountId, containers, containerId, folderOrItemType, itemTypeOrId, idOrSection, section] =
+      path.split("/");
     const result: GtmPath = {
       sourceUri: GtmFileSystemProvider.decodeAuthorityUri(fragment),
     };
@@ -515,14 +581,16 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (accountId) result.accountId = accountId;
     if (containers) result.containers = true;
     if (containerId) result.containerId = containerId;
-    if (id) result.subsection = id.replace(/\.\w+$/, "");
 
     if (folderOrItemType) {
       const folders = content.getFolder();
+      const fileEndings = new Set([...Object.values(GtmFileSystemProvider.customTemplateFileType), "json"]);
+      const stripFileEndingRegex = new RegExp(`\\.(?:${[...fileEndings].join("|")})$`);
 
       result.folder = folders.find((f) => f.name === folderOrItemType)?.name;
       result.itemType = (result.folder ? itemTypeOrId : folderOrItemType)?.replace("_", "") as GtmPath["itemType"];
-      result.itemName = (result.folder ? id : itemTypeOrId)?.replace(".json", "");
+      result.itemName = (result.folder ? idOrSection : itemTypeOrId)?.replace(stripFileEndingRegex, "");
+      result.section = (result.folder ? section : idOrSection)?.replace(stripFileEndingRegex, "");
     }
 
     return result;
