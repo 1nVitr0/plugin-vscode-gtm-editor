@@ -3,6 +3,7 @@ import { GtmExportContentProvider } from "../../providers/GtmExportContentsProvi
 import { join, resolve } from "path";
 import * as assert from "assert";
 import { before } from "mocha";
+import { GtmCustomTemplateDataSections } from "../../types/gtm/GtmCustomTemplate";
 
 suite("Unit Tests for GtmExportContentsProvider", async () => {
   const fixtureDir = resolve(__dirname, "../../../test/fixtures");
@@ -116,5 +117,20 @@ suite("Unit Tests for GtmExportContentsProvider", async () => {
 
   test("should get single custom template", () => {
     assert.equal(contentsProvider.getCustomTemplate("Custom HTML Tag")?.templateId, "0");
+  });
+
+  test("should read custom template sections", () => {
+    const customTemplate = contentsProvider.getCustomTemplate("Custom HTML Tag");
+    // ___INFO___\n\n{\n  \"type\": \"TAG\",\n  \"id\": \"cvt_temp_public_id\",\n  \"version\": 1,\n  \"securityGroups\": [],\n  \"displayName\": \"Custom HTML Tag\",\n  \"brand\": {\n    \"id\": \"brand_dummy\",\n    \"displayName\": \"\",\n    \"thumbnail\": \"data:image/png;base64,test\"\n  },\n  \"description\": \"Used for Testing\",\n  \"containerContexts\": [\n    \"WEB\"\n  ]\n}\n\n\n___TEMPLATE_PARAMETERS___\n\n[]\n\n\n___SANDBOXED_JS_FOR_WEB_TEMPLATE___\n\nconst inject = require('injectScript');\ninject('https://test.com/test.js', () => {\n  data.gtmOnSuccess();\n});\n\n\n___WEB_PERMISSIONS___\n\n[\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"inject_script\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"urls\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 1,\n                \"string\": \"https://test.com/*\"\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  }\n]\n\n\n___TESTS___\n\nscenarios: []\n\n\n___NOTES___\n\nCreated on 13.8.2020, 14:49:11
+    assert.deepEqual(customTemplate?.templateDataSections, {
+      info: '{\n  "type": "TAG",\n  "id": "cvt_temp_public_id",\n  "version": 1,\n  "securityGroups": [],\n  "displayName": "Custom HTML Tag",\n  "brand": {\n    "id": "brand_dummy",\n    "displayName": "",\n    "thumbnail": "data:image/png;base64,test"\n  },\n  "description": "Used for Testing",\n  "containerContexts": [\n    "WEB"\n  ]\n}\n',
+      templateParameters: "[]\n",
+      sandboxedJs:
+        "const inject = require('injectScript');\ninject('https://test.com/test.js', () => {\n  data.gtmOnSuccess();\n});\n",
+      notes: "Created on 13.8.2020, 14:49:11",
+      tests: "scenarios: []\n",
+      webPermissions:
+        '[\n  {\n    "instance": {\n      "key": {\n        "publicId": "inject_script",\n        "versionId": "1"\n      },\n      "param": [\n        {\n          "key": "urls",\n          "value": {\n            "type": 2,\n            "listItem": [\n              {\n                "type": 1,\n                "string": "https://test.com/*"\n              }\n            ]\n          }\n        }\n      ]\n    },\n    "clientAnnotations": {\n      "isEditedByUser": true\n    },\n    "isRequired": true\n  }\n]\n',
+    } as GtmCustomTemplateDataSections);
   });
 });
