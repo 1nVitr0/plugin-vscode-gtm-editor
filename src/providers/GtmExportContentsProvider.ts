@@ -6,9 +6,66 @@ import { GtmTrigger } from "../types/gtm/GtmTrigger";
 import { GtmVariable } from "../types/gtm/GtmVariable";
 import { GtmFolder } from "../types/gtm/GtmFolder";
 import { GtmBuiltInVariable } from "../types/gtm/GtmBuiltInVariable";
-import { GtmCustomTemplate } from "../types/gtm/GtmCustomTemplate";
+import {
+  CustomTemplateDataSectionsLines,
+  GtmCustomTemplate,
+  GtmCustomTemplateDataSections,
+  GtmCustomTemplateParsed,
+} from "../types/gtm/GtmCustomTemplate";
 
 export class GtmExportContentProvider {
+  /* eslint-disable @typescript-eslint/naming-convention */
+  private static customTemplateMarkerMap: { [k: string]: keyof GtmCustomTemplateDataSections } = {
+    ___TERMS_OF_SERVICE___: "termsOfService",
+    ___INFO___: "info",
+    ___TEMPLATE_PARAMETERS___: "templateParameters",
+    ___SANDBOXED_JS_FOR_WEB_TEMPLATE___: "sandboxedJs",
+    ___WEB_PERMISSIONS___: "webPermissions",
+    ___TESTS___: "tests",
+    ___NOTES___: "notes",
+  };
+  /* eslint-enable @typescript-eslint/naming-convention */
+
+  public static async create(uri: Uri) {
+    const data = await workspace.fs.readFile(uri);
+    return new GtmExportContentProvider(uri, data.toString());
+  }
+
+  private static parseTemplateSections(templateData: string): GtmCustomTemplateDataSections {
+    let currentKey: keyof GtmCustomTemplateDataSections | undefined = undefined;
+    const templateLines = templateData.split(/\r?\n/).reduce((templateData, line) => {
+      const newKey = GtmExportContentProvider.customTemplateMarkerMap[line];
+      currentKey = newKey || currentKey;
+
+      if (newKey) templateData[newKey] = [];
+      else if (currentKey) templateData[currentKey]!.push(line);
+
+      return templateData;
+    }, {} as CustomTemplateDataSectionsLines);
+
+    return Object.fromEntries(
+      Object.entries(templateLines).map(([key, value]) => [
+        key,
+        value.slice(1, value[value.length - 1] === "" ? -1 : value.length).join("\n"),
+      ]) as [keyof GtmCustomTemplateDataSections, string][]
+    );
+  }
+
+  private static mapTemplateDataSections(customTemplate: GtmCustomTemplateParsed) {
+    const invertedMap = Object.fromEntries(
+      Object.entries(GtmExportContentProvider.customTemplateMarkerMap).map(([key, value]) => [value, key])
+    );
+
+    const { templateDataSections, ...rest } = customTemplate;
+
+    return {
+      ...rest,
+      templateData: Object.entries(templateDataSections)
+        .map(([key, value]) => `${invertedMap[key]}\n${value}\n`)
+        .join("\n"),
+    };
+  }
+
   public readonly exportTime: Date;
 
   public get updateTime(): Date {
@@ -42,7 +99,7 @@ export class GtmExportContentProvider {
   private _variables: GtmVariable[];
   private _folders: GtmFolder[];
   private _builtInVariables: GtmBuiltInVariable[];
-  private _customTemplates: GtmCustomTemplate[];
+  private _customTemplates: GtmCustomTemplateParsed[];
   private _saveSoonHandle?: NodeJS.Timer;
 
   private set updateTime(value: Date) {
@@ -65,7 +122,10 @@ export class GtmExportContentProvider {
     this._variables = variable;
     this._folders = folder;
     this._builtInVariables = builtInVariable;
-    this._customTemplates = customTemplate;
+    this._customTemplates = customTemplate.map(({ templateData, ...rest }) => {
+      const templateDataSections = GtmExportContentProvider.parseTemplateSections(templateData);
+      return { ...rest, templateData, templateDataSections };
+    });
   }
 
   public async reload() {
@@ -82,7 +142,10 @@ export class GtmExportContentProvider {
     this._variables = variable;
     this._folders = folder;
     this._builtInVariables = builtInVariable;
-    this._customTemplates = customTemplate;
+    this._customTemplates = customTemplate.map(({ templateData, ...rest }) => {
+      const templateDataSections = GtmExportContentProvider.parseTemplateSections(templateData);
+      return { ...rest, templateData, templateDataSections };
+    });
   }
 
   public getContainer(): GtmContainer {
@@ -137,11 +200,16 @@ export class GtmExportContentProvider {
     else return this._builtInVariables;
   }
 
-  public getCustomTemplate(name: string): GtmCustomTemplate | undefined;
-  public getCustomTemplate(): GtmCustomTemplate[];
-  public getCustomTemplate(name?: string): GtmCustomTemplate[] | GtmCustomTemplate | undefined {
+  public getCustomTemplate(name: string): GtmCustomTemplateParsed | undefined;
+  public getCustomTemplate(): GtmCustomTemplateParsed[];
+  public getCustomTemplate(name?: string): GtmCustomTemplateParsed[] | GtmCustomTemplateParsed | undefined {
     if (name) return this._customTemplates.find((template) => template.name === name);
     else return this._customTemplates;
+  }
+
+  public getCustomTemplateSection(name: string, section: keyof GtmCustomTemplateDataSections): string | undefined {
+    const template = this.getCustomTemplate(name);
+    return template?.templateDataSections[section];
   }
 
   public setContainer(data: GtmContainer) {
@@ -217,10 +285,17 @@ export class GtmExportContentProvider {
     return this.saveSoon();
   }
 
-  public setCustomTemplate(name: string, data: GtmCustomTemplate) {
+  public setCustomTemplate(name: string, data: GtmCustomTemplateParsed) {
     const template = this.getCustomTemplate(name);
     if (template) Object.assign(template, data);
     else this._customTemplates.push(data);
+
+    return this.saveSoon();
+  }
+
+  public setCustomTemplateSection(name: string, section: keyof GtmCustomTemplateDataSections, data: string) {
+    const template = this.getCustomTemplate(name);
+    if (template) template.templateDataSections[section] = data;
 
     return this.saveSoon();
   }
@@ -260,6 +335,13 @@ export class GtmExportContentProvider {
     return this.saveSoon();
   }
 
+  public deleteCustomTemplateSection(name: string, section: keyof GtmCustomTemplateDataSections) {
+    const template = this.getCustomTemplate(name);
+    if (template) delete template.templateDataSections[section];
+
+    return this.saveSoon();
+  }
+
   public setParentFolder(item: any, folder: string | null) {
     const folderId = folder ? this._folders.find((f) => f.name === folder)?.folderId : null;
     item.parentFolderId = folderId;
@@ -277,7 +359,17 @@ export class GtmExportContentProvider {
   private save() {
     this.updateTime = new Date();
 
-    const data = JSON.stringify(this._data, null, 2);
+    const data = JSON.stringify(
+      {
+        ...this._data,
+        containerVersion: {
+          ...this._data.containerVersion,
+          customTemplate: this._customTemplates.map(GtmExportContentProvider.mapTemplateDataSections),
+        },
+      },
+      null,
+      2
+    );
     return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
   }
 

@@ -1,0 +1,56 @@
+{
+    "exportFormatVersion": 2,
+    "exportTime": "2017-03-16 12:05:21",
+    "containerVersion": {
+        "path": "accounts/1164259306/containers/6507467/versions/0",
+        "accountId": "1164259306",
+        "containerId": "6507467",
+        "containerVersionId": "0",
+        "container": {
+            "path": "accounts/1164259306/containers/6507467",
+            "accountId": "1164259306",
+            "containerId": "6507467",
+            "name": "Clear Container Recipe",
+            "publicId": "GTM-N87D32T",
+            "usageContext": [
+                "WEB"
+            ],
+            "fingerprint": "1489663112101",
+            "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/1164259306/containers/6507467/workspaces?apiLink=container"
+        },
+        "builtInVariable": [
+            {
+                "accountId": "1164259306",
+                "containerId": "6507467",
+                "type": "PAGE_URL",
+                "name": "Page URL"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6507467",
+                "type": "PAGE_HOSTNAME",
+                "name": "Page Hostname"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6507467",
+                "type": "PAGE_PATH",
+                "name": "Page Path"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6507467",
+                "type": "REFERRER",
+                "name": "Referrer"
+            },
+            {
+                "accountId": "1164259306",
+                "containerId": "6507467",
+                "type": "EVENT",
+                "name": "Event"
+            }
+        ],
+        "fingerprint": "0",
+        "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/1164259306/containers/6507467/versions/0?apiLink=version"
+    }
+}
