@@ -162,8 +162,16 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
     });
 
     test("should stat single customTemplate", async () => {
-      const customTemplateUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag.json` });
+      const customTemplateUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag` });
       const customTemplate = await gtmFileSystem.stat(customTemplateUri);
+      assert.equal(customTemplate.type, FileType.Directory);
+    });
+
+    test("should stat customTemplate section", async () => {
+      const customTemplateSectionUri = gtmUri.with({
+        path: `${containerPath}/_customTemplates/Custom HTML Tag/info.json`,
+      });
+      const customTemplate = await gtmFileSystem.stat(customTemplateSectionUri);
       assert.equal(customTemplate.type, FileType.File);
     });
   });
@@ -236,6 +244,12 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates` });
       const customTemplates = await gtmFileSystem.readDirectory(customTemplatesUri);
       assert.equal(customTemplates.length, 1);
+    });
+
+    test("should read customTemplate sections", async () => {
+      const customTemplateSectionUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag` });
+      const customTemplate = await gtmFileSystem.readDirectory(customTemplateSectionUri);
+      assert.equal(customTemplate.length, 7);
     });
   });
 
@@ -345,15 +359,22 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
     });
 
     // Custom Templates
-    test("should read customTemplates", async () => {
-      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag.json` });
+    test("should read customTemplate section", async () => {
+      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag/info.json` });
       const customTemplates = await gtmFileSystem.readFile(customTemplatesUri);
       assert.ok(Buffer.isBuffer(customTemplates), "CustomTemplates is not a buffer");
     });
 
     test("should throw error if customTemplate does not exist", async () => {
       const customTemplatesUri = gtmUri.with({
-        path: `${containerPath}/_customTemplates/NonExistentCustomTemplate.json`,
+        path: `${containerPath}/_customTemplates/NonExistentCustomTemplate`,
+      });
+      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri), "Expected EntryNotFound Exception");
+    });
+
+    test("should throw error if customTemplate section does not exist", async () => {
+      const customTemplatesUri = gtmUri.with({
+        path: `${containerPath}/_customTemplates/Custom HTML Tag/nonExistentSection.json`,
       });
       await assert.rejects(gtmFileSystem.readFile(customTemplatesUri), "Expected EntryNotFound Exception");
     });
@@ -368,7 +389,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     afterEach(async () => {
       await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 50));
     });
 
     // Container
@@ -616,32 +637,41 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
       assert.deepEqual(JSON.parse(builtInVariables.toString()), JSON.parse(containerItemTestContent));
     });
 
-    // Custom Templates
-    test("should write customTemplates", async () => {
-      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag.json` });
-      const originalContent = await gtmFileSystem.readFile(customTemplatesUri);
-      const testContent = originalContent.toString().replace(/\}$/, ',"test":true}');
-
-      await gtmFileSystem.writeFile(customTemplatesUri, Buffer.from(testContent, "utf-8"), {
-        create: false,
-        overwrite: true,
-      });
-      const customTemplates = await gtmFileSystem.readFile(customTemplatesUri);
+    test("should create new customTemplate", async () => {
+      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test` });
+      const customTemplateBaseUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test/Test.json` });
+      await gtmFileSystem.createDirectory(customTemplatesUri);
+      const customTemplates = await gtmFileSystem.readFile(customTemplateBaseUri);
 
       assert.ok(Buffer.isBuffer(customTemplates), "CustomTemplates is not a buffer");
     });
 
-    test("should create new customTemplate", async () => {
-      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test.json` });
-      const containerItemTestContent = JSON.stringify(containerItemTest);
-      await gtmFileSystem.writeFile(customTemplatesUri, Buffer.from(containerItemTestContent, "utf-8"), {
+    test("should create new customTemplate section", async () => {
+      const customTemplateSectionUri = gtmUri.with({
+        path: `${containerPath}/_customTemplates/Custom HTML Tag/termsOfService.json`,
+      });
+      await gtmFileSystem.writeFile(customTemplateSectionUri, Buffer.from("Test\n", "utf-8"), {
         create: true,
         overwrite: false,
       });
-      const customTemplates = await gtmFileSystem.readFile(customTemplatesUri);
+      const customTemplateSection = await gtmFileSystem.readFile(customTemplateSectionUri);
 
-      assert.ok(Buffer.isBuffer(customTemplates), "CustomTemplates is not a buffer");
-      assert.deepEqual(JSON.parse(customTemplates.toString()), JSON.parse(containerItemTestContent));
+      assert.ok(Buffer.isBuffer(customTemplateSection), "CustomTemplateSection is not a buffer");
+      assert.equal(customTemplateSection.toString(), "Test\n");
+    });
+  });
+
+  //#region Unit Tests for GtmFileSystemProvider.createDirectory
+
+  suite("Unit Tests for GtmFileSystemProvider.createDirectory", async () => {
+    // Custom Templates
+    test("should create customTemplate directory", async () => {
+      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag` });
+
+      await gtmFileSystem.createDirectory(customTemplatesUri);
+      const customTemplates = await gtmFileSystem.readDirectory(customTemplatesUri);
+
+      assert.deepEqual(customTemplates, [["Custom HTML Tag.json", FileType.File]]);
     });
   });
 
@@ -654,7 +684,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     afterEach(async () => {
       await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 50));
     });
 
     // Container
@@ -796,7 +826,7 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     afterEach(async () => {
       await workspace.fs.writeFile(fixtureUri, Buffer.from(originalContent));
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 50));
     });
 
     // Container
@@ -971,13 +1001,13 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
 
     // Custom Templates
     test("should rename customTemplates", async () => {
-      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag.json` });
-      const newCustomTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test.json` });
+      const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Custom HTML Tag` });
+      const newCustomTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test` });
       await gtmFileSystem.rename(customTemplatesUri, newCustomTemplatesUri, { overwrite: true });
-      const customTemplates = await gtmFileSystem.readFile(newCustomTemplatesUri);
+      const customTemplates = await gtmFileSystem.readDirectory(newCustomTemplatesUri);
 
-      assert.ok(Buffer.isBuffer(customTemplates), "CustomTemplates is not a buffer");
-      await assert.rejects(gtmFileSystem.readFile(customTemplatesUri), "Expected EntryNotFound Exception");
+      assert.ok(customTemplates.length, "CustomTemplates is empty");
+      await assert.rejects(gtmFileSystem.readDirectory(customTemplatesUri), "Expected EntryNotFound Exception");
     });
 
     test("should throw error if customTemplate does not exist", async () => {

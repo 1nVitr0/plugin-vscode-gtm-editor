@@ -9,4 +9,5 @@ export interface GtmPath {
   itemName?: string;
   accounts?: boolean;
   containers?: boolean;
+  section?: string;
 }
