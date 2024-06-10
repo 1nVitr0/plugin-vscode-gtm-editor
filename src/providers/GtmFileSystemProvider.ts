@@ -158,7 +158,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (accountId && accountId !== content.accountId) throw FileSystemError.FileNotFound(uri);
     if (containerId && containerId !== content.containerId) throw FileSystemError.FileNotFound(uri);
 
-    if (itemName && section) {
+    if (itemName && section && itemName !== section) {
       const data =
         itemType === "customTemplates"
           ? content.getCustomTemplate(itemName)?.templateDataSections[section as keyof GtmCustomTemplateDataSections]
@@ -530,10 +530,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     if (oldItemType !== newItemType) throw FileSystemError.Unavailable(newUri);
     if (!oldItemName || !newItemName) throw FileSystemError.Unavailable(newUri);
     if (newSection && !supportsSections) throw FileSystemError.Unavailable(newUri);
-    if (supportsSections && (!oldSection || !newSection)) throw FileSystemError.Unavailable(newUri);
     if (!overwrite && (await this.exists(newUri))) throw FileSystemError.FileExists(newUri);
 
-    const item = JSON.parse((await this.readFile(oldUri)).toString()); // Will throw Error if file doesn't exist
+    const fileUri =
+      supportsSections && !oldSection ? oldUri.with({ path: `${oldUri.path}/${oldItemName}.json` }) : oldUri;
+    const item = JSON.parse((await this.readFile(fileUri)).toString()); // Will throw Error if file doesn't exist
     if (newFolder) item.parentFolderId = content.getFolder(newFolder)?.folderId;
     else delete item.parentFolderId;
     item.name = oldSection === oldItemName ? newSection : newItemName;

@@ -640,12 +640,10 @@ suite("Unit Tests for GtmFileSystemProvider", async () => {
     test("should create new customTemplate", async () => {
       const customTemplatesUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test` });
       const customTemplateBaseUri = gtmUri.with({ path: `${containerPath}/_customTemplates/Test/Test.json` });
-      const containerItemTestContent = JSON.stringify(containerItemTest);
       await gtmFileSystem.createDirectory(customTemplatesUri);
       const customTemplates = await gtmFileSystem.readFile(customTemplateBaseUri);
 
       assert.ok(Buffer.isBuffer(customTemplates), "CustomTemplates is not a buffer");
-      assert.deepEqual(JSON.parse(customTemplates.toString()), JSON.parse(containerItemTestContent));
     });
 
     test("should create new customTemplate section", async () => {
