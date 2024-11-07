@@ -28,7 +28,8 @@
   ],
   "activationEvents": [
     "onFileSystem:gtm",
-    "onCommand:gtm-editor.openGtmExport"
+    "onCommand:gtm-editor.openGtmExport",
+    "onCommand:gtm-editor.openGtmExportDialog"
   ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
@@ -45,7 +46,11 @@
     "commands": [
       {
         "command": "gtm-editor.openGtmExport",
-        "title": "Open GTM Export"
+        "title": "%command.openGtmExport%"
+      },
+      {
+        "command": "gtm-editor.openGtmExportDialog",
+        "title": "%command.openGtmExportDialog%"
       }
     ],
     "jsonValidation": [
@@ -82,7 +87,21 @@
         "url": "./resources/schemas/GtmCustomTemplate.schema.json"
       }
     ],
-    "configuration": []
+    "configuration": {
+      "title": "%configuration%",
+      "properties": {
+        "gtm-editor.enableTemporaryFile": {
+          "description": "%configuration.enableTemporaryFile%",
+          "type": "boolean",
+          "default": true
+        },
+        "gtm-editor.temporaryFilePrefix": {
+          "description": "%configuration.temporaryFilePrefix%",
+          "type": "string",
+          "default": ".~"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -104,7 +123,7 @@
     "@types/deepmerge": "^2.2.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^18.6.4",
+    "@types/node": "^20.17.6",
     "@types/vscode": "1.73",
     "@types/xml2js": "^0.4.12",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
@@ -127,56 +146,5 @@
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "xml2js": "^0.6.2"
-  },
-  "release": {
-    "branches": [
-      "main",
-      "develop"
-    ],
-    "plugins": [
-      [
-        "@semantic-release/commit-analyzer",
-        {
-          "preset": "angular",
-          "releaseRules": [
-            {
-              "type": "docs",
-              "release": "patch"
-            },
-            {
-              "type": "l10n",
-              "release": "patch"
-            }
-          ]
-        }
-      ],
-      "@semantic-release/release-notes-generator",
-      "@semantic-release/changelog",
-      [
-        "@semantic-release/git",
-        {
-          "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}",
-          "assets": [
-            "package.json",
-            "CHANGELOG.md",
-            "README.md"
-          ]
-        }
-      ],
-      [
-        "semantic-release-vsce",
-        {
-          "packageVsix": true
-        }
-      ],
-      [
-        "@semantic-release/github",
-        {
-          "assets": [
-            "*.vsix"
-          ]
-        }
-      ]
-    ]
   }
 }

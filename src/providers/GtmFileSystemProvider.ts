@@ -43,7 +43,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
   private _contentProviders: Map<string, GtmExportContentProvider | Promise<GtmExportContentProvider>> = new Map();
   private _emitter = new EventEmitter<FileChangeEvent[]>();
   private _bufferedEvents: FileChangeEvent[] = [];
-  private _fireSoonHandle?: NodeJS.Timer;
+  private _fireSoonHandle?: NodeJS.Timeout;
 
   readonly onDidChangeFile: Event<FileChangeEvent[]> = this._emitter.event;
 
@@ -99,7 +99,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     return Uri.from({ scheme, fragment, path });
   }
 
-  async load(uri: Uri, forceReload = false): Promise<GtmExportContentProvider> {
+  public async load(uri: Uri, forceReload = false): Promise<GtmExportContentProvider> {
     const { fragment } = uri;
     const sourceUri = GtmFileSystemProvider.decodeAuthorityUri(fragment);
     const rootUri = GtmFileSystemProvider.buildPath({ sourceUri });
@@ -116,7 +116,8 @@ export class GtmFileSystemProvider implements FileSystemProvider {
         return reject(error);
       }
 
-      const contentProvider = await GtmExportContentProvider.create(sourceUri);
+      const enableTmpFile = workspace.getConfiguration("gtm-editor").get<boolean>("enableTmpFile", false);
+      const contentProvider = await GtmExportContentProvider.create(sourceUri, enableTmpFile);
       this._contentProviders.set(sourceKey, contentProvider);
       this._fireSoon({ type: FileChangeType.Created, uri: rootUri });
 
@@ -137,7 +138,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     return contentProvider;
   }
 
-  watch(
+  public watch(
     uri: Uri,
     options: {
       readonly recursive: boolean;
@@ -148,7 +149,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     return new Disposable(() => {});
   }
 
-  async stat(uri: Uri): Promise<FileStat> {
+  public async stat(uri: Uri): Promise<FileStat> {
     const content = await this.load(uri);
     const { accountId, containerId, folder, itemType, itemName, section } = await this.resolvePath(uri);
 
@@ -203,7 +204,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async readDirectory(uri: Uri): Promise<[string, FileType][]> {
+  public async readDirectory(uri: Uri): Promise<[string, FileType][]> {
     const content = await this.load(uri);
     const { accountId, containerId, folder, itemType, accounts, containers, itemName, section } =
       await this.resolvePath(uri);
@@ -264,7 +265,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async createDirectory(uri: Uri): Promise<void> {
+  public async createDirectory(uri: Uri): Promise<void> {
     const content = await this.load(uri);
     const { accounts, accountId, containers, containerId, itemType, itemName, section } = await this.resolvePath(uri);
 
@@ -304,7 +305,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async readFile(uri: Uri): Promise<Uint8Array> {
+  public async readFile(uri: Uri): Promise<Uint8Array> {
     const content = await this.load(uri);
     const stat = await this.stat(uri); // Will throw error if it doesn't exist
     const { accountId, containerId, folder, itemType, itemName, section } = await this.resolvePath(uri);
@@ -342,7 +343,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async writeFile(
+  public async writeFile(
     uri: Uri,
     data: Uint8Array,
     { create, overwrite }: { readonly create: boolean; readonly overwrite: boolean }
@@ -455,7 +456,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async delete(uri: Uri, { recursive }: { readonly recursive: boolean }): Promise<void> {
+  public async delete(uri: Uri, { recursive }: { readonly recursive: boolean }): Promise<void> {
     const content = await this.load(uri);
     const event = { type: FileChangeType.Deleted, uri };
     const { accounts, accountId, containers, containerId, folder, itemType, itemName, section } =
@@ -510,7 +511,7 @@ export class GtmFileSystemProvider implements FileSystemProvider {
     }
   }
 
-  async rename(oldUri: Uri, newUri: Uri, { overwrite }: { readonly overwrite: boolean }): Promise<void> {
+  public async rename(oldUri: Uri, newUri: Uri, { overwrite }: { readonly overwrite: boolean }): Promise<void> {
     const content = await this.load(oldUri);
     const { itemType: oldItemType, itemName: oldItemName, section: oldSection } = await this.resolvePath(oldUri);
     const {
@@ -563,6 +564,11 @@ export class GtmFileSystemProvider implements FileSystemProvider {
       default:
         throw FileSystemError.Unavailable(oldUri);
     }
+  }
+
+  public async publish(uri: Uri): Promise<void> {
+    const content = await this.load(uri);
+    await content.applyTmpFile();
   }
 
   private async resolvePath(uri: Uri): Promise<GtmPath> {

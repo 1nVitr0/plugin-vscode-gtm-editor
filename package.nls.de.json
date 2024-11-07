@@ -1,1 +1,7 @@
-{}
+{
+  "command.openGtmExport": "GTM Export öffnen",
+  "command.openGtmExportDialog": "Google Tag Manager Export öffnen...",
+  "configuration": "GTM Editor",
+  "configuration.enableTemporaryFile": "GTM Editor: Temporäre Datei aktivieren",
+  "configuration.temporaryFilePrefix": "GTM Editor: Präfix für temporäre Dateien"
+}

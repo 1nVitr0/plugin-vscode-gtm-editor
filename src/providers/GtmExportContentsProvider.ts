@@ -26,9 +26,25 @@ export class GtmExportContentProvider {
   };
   /* eslint-enable @typescript-eslint/naming-convention */
 
-  public static async create(uri: Uri) {
-    const data = await workspace.fs.readFile(uri);
-    return new GtmExportContentProvider(uri, data.toString());
+  public static async create(uri: Uri, enableTmpFile: boolean): Promise<GtmExportContentProvider> {
+    const tmpFileUri = enableTmpFile ? GtmExportContentProvider.getTmpFileUri(uri) : null;
+    const hasTmpFile = tmpFileUri && (await GtmExportContentProvider.fileExists(tmpFileUri));
+    const data = await workspace.fs.readFile(hasTmpFile ? tmpFileUri ?? uri : uri);
+
+    return new GtmExportContentProvider(uri, data.toString(), tmpFileUri);
+  }
+
+  private static getTmpFileUri(uri: Uri): Uri {
+    const prefix = workspace.getConfiguration("gtm-editor").get<string>("tmpFilePrefix", ".~");
+    const tmpFileName = uri.fsPath.split("/").pop()!.replace(/^/, prefix);
+    return uri.with({ path: uri.path.replace(/[^/]+$/, tmpFileName) });
+  }
+
+  private static async fileExists(uri: Uri): Promise<boolean> {
+    return await workspace.fs.stat(uri).then(
+      () => true,
+      () => false
+    );
   }
 
   private static parseTemplateSections(templateData: string): GtmCustomTemplateDataSections {
@@ -100,13 +116,13 @@ export class GtmExportContentProvider {
   private _folders: GtmFolder[];
   private _builtInVariables: GtmBuiltInVariable[];
   private _customTemplates: GtmCustomTemplateParsed[];
-  private _saveSoonHandle?: NodeJS.Timer;
+  private _saveSoonHandle?: NodeJS.Timeout;
 
   private set updateTime(value: Date) {
     this._data.exportTime = value.toISOString();
   }
 
-  constructor(private gtmExportUri: Uri, initialContent: string) {
+  constructor(private gtmExportUri: Uri, initialContent: string, public readonly tmpFileUri: Uri | null = null) {
     this._data = JSON.parse(initialContent.toString());
 
     const {
@@ -129,7 +145,8 @@ export class GtmExportContentProvider {
   }
 
   public async reload() {
-    const data = await workspace.fs.readFile(this.gtmExportUri);
+    const currentUri = await this.getCurrentFileUri();
+    const data = await workspace.fs.readFile(currentUri);
     this._data = JSON.parse(data.toString());
 
     const {
@@ -356,7 +373,20 @@ export class GtmExportContentProvider {
     this._data.containerVersion.containerId = containerId;
   }
 
-  private save() {
+  public async applyTmpFile() {
+    if (!this.tmpFileUri) return;
+
+    await workspace.fs.writeFile(this.gtmExportUri, await workspace.fs.readFile(this.tmpFileUri));
+    await workspace.fs.delete(this.tmpFileUri);
+  }
+
+  private async getCurrentFileUri() {
+    const hasTmpFile = this.tmpFileUri && (await GtmExportContentProvider.fileExists(this.tmpFileUri));
+
+    return hasTmpFile ? this.tmpFileUri ?? this.gtmExportUri : this.gtmExportUri;
+  }
+
+  private async save() {
     this.updateTime = new Date();
 
     const data = JSON.stringify(
@@ -370,7 +400,8 @@ export class GtmExportContentProvider {
       null,
       2
     );
-    return workspace.fs.writeFile(this.gtmExportUri, Buffer.from(data));
+    const currentUri = await this.getCurrentFileUri();
+    return await workspace.fs.writeFile(currentUri, Buffer.from(data));
   }
 
   private saveSoon() {
